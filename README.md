@@ -1,4 +1,4 @@
-<h1>Yummy Recipes APIs</h1>
+<h1>Yummy Recipes API</h1>
 <a href="https://travis-ci.org/pndemo/yummy-recipes-api">
 <img class="notice-badge" src="https://travis-ci.org/pndemo/yummy-recipes-api.svg?branch=master" alt="Badge"/>
 </a>
