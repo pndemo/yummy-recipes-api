@@ -5,13 +5,14 @@ python:
 postgres:
   adapter: postgresql
   database: yummydb_test
-  username: yummyadmin
+  username: postgres
   
 install:
   - pip install -r requirements.txt
 
 before_script:
-  - "psql -c 'create database yummydb_test;' -U yummyadmin"
+  - "psql -c 'createuser yummyadmin -P -d"
+  - "psql -c 'createdb yummydb_test -U yummyadmin -h localhost"
   - "rake db:migrate"
   
 script:
