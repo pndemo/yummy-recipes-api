@@ -12,11 +12,10 @@ This app enables you to access Yummy Recipes resources, a platform for users to 
 <h3>Installation</h3>
 <ol>
   <li>Install Python (preferably, version >= 3.5).</li>
-  <li>
-    Clone Yummy Recipes API from GitHub to your local machine.
-    ```$ git clone https://github.com/pndemo/yummy-recipes-api.git```
-  </li>
-  
+  <li>Clone Yummy Recipes API from GitHub to your local machine.</li>
+  ```
+  $ git clone https://github.com/pndemo/yummy-recipes-api.git
+  ```
   <li>Change directory to yummy-recipes-api</li>
   ```$ cd yummy-recipes-api```
   <li>Create virtual environment</li>
