@@ -1,9 +1,9 @@
 <h1>Yummy Recipes API</h1>
 <a href="https://travis-ci.org/pndemo/yummy-recipes-api">
-<img class="notice-badge" src="https://travis-ci.org/pndemo/yummy-recipes-api.svg?branch=master" alt="Badge"/>
+<img class="notice-badge" src="https://travis-ci.org/pndemo/yummy-recipes-api.svg?branch=develop" alt="Badge"/>
 </a>
 <a href="https://coveralls.io/github/pndemo/yummy-recipes-api">
-<img class="notice-badge" src="https://coveralls.io/repos/github/pndemo/yummy-recipes-api/badge.svg?branch=master" alt="Badge"/>
+<img class="notice-badge" src="https://coveralls.io/repos/github/pndemo/yummy-recipes-api/badge.svg?branch=develop" alt="Badge"/>
 </a>
 <br/>
 <h4>About Yummy Recipes APIs</h4>
