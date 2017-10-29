@@ -128,16 +128,20 @@ class CategoryTests(unittest.TestCase):
                 access_token))
         self.assertEqual(res.status_code, 200)
         self.assertIn('Breakfast', str(res.data))
+        res = self.client().get('/category/?page=1&limit=10', headers=dict(Authorization= \
+                "Bearer " + access_token))
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Breakfast', str(res.data))
 
     def test_get_category_by_id(self):
         """Test API for GET request (specific category by id)"""
         self.register_user()
         result = self.login_user()
         access_token = json.loads(result.data.decode())['access_token']
-        rv = self.client().post('/category/', headers=dict(Authorization="Bearer " + \
+        res = self.client().post('/category/', headers=dict(Authorization="Bearer " + \
                 access_token), data=self.category)
-        self.assertEqual(rv.status_code, 201)
-        results = json.loads(rv.data.decode())
+        self.assertEqual(res.status_code, 201)
+        results = json.loads(res.data.decode())
         result = self.client().get('/category/{}'.format(results['id']), \
                 headers=dict(Authorization="Bearer " + access_token))
         self.assertEqual(result.status_code, 200)
@@ -148,15 +152,16 @@ class CategoryTests(unittest.TestCase):
         self.register_user()
         result = self.login_user()
         access_token = json.loads(result.data.decode())['access_token']
-        rv = self.client().post('/category/', headers=dict(Authorization="Bearer " + \
+        res = self.client().post('/category/', headers=dict(Authorization="Bearer " + \
                 access_token), data={'category_name': 'Desserts'})
-        self.assertEqual(rv.status_code, 201)
-        results = json.loads(rv.data.decode())
-        rv = self.client().put('/category/{}'.format(results['id']), headers= \
+        self.assertEqual(res.status_code, 201)
+        results = json.loads(res.data.decode())
+        res = self.client().put('/category/{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + access_token), data={'category_name': 'Snacks'})
-        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(res.status_code, 200)
         results = self.client().get('/category/{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + access_token))
+        self.assertEqual(result.status_code, 200)
         self.assertIn('Snacks', str(results.data))
 
     def test_delete_category(self):
@@ -164,16 +169,34 @@ class CategoryTests(unittest.TestCase):
         self.register_user()
         result = self.login_user()
         access_token = json.loads(result.data.decode())['access_token']
-        rv = self.client().post('/category/', headers=dict(Authorization="Bearer " + \
+        res = self.client().post('/category/', headers=dict(Authorization="Bearer " + \
                 access_token), data={'category_name': 'Desserts'})
-        self.assertEqual(rv.status_code, 201)
-        results = json.loads(rv.data.decode())
+        self.assertEqual(res.status_code, 201)
+        results = json.loads(res.data.decode())
         res = self.client().delete('/category/{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + access_token))
         self.assertEqual(res.status_code, 200)
         result = self.client().get('/category/1', headers=dict(Authorization="Bearer " + \
                 access_token))
         self.assertEqual(result.status_code, 404)
+
+    def test_search_category(self):
+        """Test API for search"""
+        self.register_user()
+        result = self.login_user()
+        access_token = json.loads(result.data.decode())['access_token']
+        res = self.client().post('/category/', headers=dict(Authorization="Bearer " + \
+                access_token), data=self.category)
+        self.assertEqual(res.status_code, 201)
+        res = self.client().get('/category/search?q={}'.format(self.category['category_name']), \
+                headers=dict(Authorization="Bearer " + access_token))
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Breakfast', str(res.data))
+        res = self.client().get('/category/search?q={}&page=1&limit=10'. \
+                format(self.category['category_name']), headers=dict(Authorization="Bearer " + \
+                access_token))
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Breakfast', str(res.data))
 
 class RecipeTests(unittest.TestCase):
     """ Tests for creating, viewing, updating and deleting recipes """
@@ -230,16 +253,21 @@ class RecipeTests(unittest.TestCase):
                 access_token))
         self.assertEqual(res.status_code, 200)
         self.assertIn('Espresso Esiri', str(res.data))
+        res = self.client().get('/recipe/?page=1&limit=10', headers=dict(Authorization= \
+                "Bearer " + access_token))
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Espresso Esiri', str(res.data))
+
 
     def test_get_recipe_by_id(self):
         """Test API for GET request (specific recipe by id)"""
         self.register_user()
         result = self.login_user()
         access_token = json.loads(result.data.decode())['access_token']
-        rv = self.client().post('/recipe/', headers=dict(Authorization="Bearer " + \
+        res = self.client().post('/recipe/', headers=dict(Authorization="Bearer " + \
                 access_token), data=self.recipe)
-        self.assertEqual(rv.status_code, 201)
-        results = json.loads(rv.data.decode())
+        self.assertEqual(res.status_code, 201)
+        results = json.loads(res.data.decode())
         result = self.client().get('/recipe/{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + access_token))
         self.assertEqual(result.status_code, 200)
@@ -250,7 +278,7 @@ class RecipeTests(unittest.TestCase):
         self.register_user()
         result = self.login_user()
         access_token = json.loads(result.data.decode())['access_token']
-        rv = self.client().post('/recipe/', headers=dict(Authorization= \
+        res = self.client().post('/recipe/', headers=dict(Authorization= \
                 "Bearer " + access_token), data={'title': 'Apple Cinnamon White Cake', \
                 'ingredients': '1) 1 teaspoon ground cinnamon 2) 2/3 cup white sugar \
                 3) 1/2 cup butter, softened 4) 2 eggs 5) 1 1/2 teaspoons vanilla extract \
@@ -264,9 +292,9 @@ class RecipeTests(unittest.TestCase):
                 top with remaining apples and brown sugar mixture. 4) Bake in the preheated \
                 oven until a toothpick inserted in the center of the loaf comes out clean, \
                 30 to 40 minutes.', 'category_id': 1})
-        self.assertEqual(rv.status_code, 201)
-        results = json.loads(rv.data.decode())
-        rv = self.client().put('/recipe/{}'.format(results['id']), headers= \
+        self.assertEqual(res.status_code, 201)
+        results = json.loads(res.data.decode())
+        res = self.client().put('/recipe/{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + access_token), data={'title': 'Cheesy Crackers', \
                 'ingredients': '1) 1/2 teaspoon vegetable oil 2) 2 tablespoons unsalted \
                 butter at room temperature 3) 3/4 cup lightly packed shredded sharp Cheddar \
@@ -282,9 +310,10 @@ class RecipeTests(unittest.TestCase):
                 squeezed. 4) Transfer dough to a work surface and press into a thick, \
                 flattened disk. Wrap in plastic wrap and refrigerate 30 minutes. 5) Preheat \
                 oven to 375 degrees F (190 degrees C).', 'category_id': 1})
-        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(res.status_code, 200)
         results = self.client().get('/recipe/{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + access_token))
+        self.assertEqual(result.status_code, 200)
         self.assertIn('Cheesy Crackers', str(results.data))
 
     def test_delete_recipe(self):
@@ -292,7 +321,7 @@ class RecipeTests(unittest.TestCase):
         self.register_user()
         result = self.login_user()
         access_token = json.loads(result.data.decode())['access_token']
-        rv = self.client().post('/recipe/', headers=dict(Authorization= \
+        res = self.client().post('/recipe/', headers=dict(Authorization= \
                 "Bearer " + access_token), data={'title': 'Apple Cinnamon White Cake', \
                 'ingredients': '1) 1 teaspoon ground cinnamon 2) 2/3 cup white sugar \
                 3) 1/2 cup butter, softened 4) 2 eggs 5) 1 1/2 teaspoons vanilla extract \
@@ -306,14 +335,32 @@ class RecipeTests(unittest.TestCase):
                 top with remaining apples and brown sugar mixture. 4) Bake in the preheated \
                 oven until a toothpick inserted in the center of the loaf comes out clean, \
                 30 to 40 minutes.', 'category_id': 1})
-        self.assertEqual(rv.status_code, 201)
-        results = json.loads(rv.data.decode())
+        self.assertEqual(res.status_code, 201)
+        results = json.loads(res.data.decode())
         res = self.client().delete('/recipe/{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + access_token))
         self.assertEqual(res.status_code, 200)
         result = self.client().get('/recipe/1', headers=dict(Authorization="Bearer " + \
                 access_token))
         self.assertEqual(result.status_code, 404)
+
+    def test_search_recipe(self):
+        """Test API for search"""
+        self.register_user()
+        result = self.login_user()
+        access_token = json.loads(result.data.decode())['access_token']
+        res = self.client().post('/recipe/', headers=dict(Authorization="Bearer " + \
+                access_token), data=self.recipe)
+        self.assertEqual(res.status_code, 201)
+        res = self.client().get('/recipe/search?q={}'.format(self.recipe['title']), \
+                headers=dict(Authorization="Bearer " + access_token))
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Espresso Esiri', str(res.data))
+        res = self.client().get('/recipe/search?q={}&page=1&limit=10'. \
+                format(self.recipe['title']), headers=dict(Authorization="Bearer " + \
+                access_token))
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Espresso Esiri', str(res.data))
 
 if __name__ == "__main__":
     unittest.main()

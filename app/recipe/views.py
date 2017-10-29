@@ -50,12 +50,20 @@ class RecipeView(MethodView):
         """Process GET request"""
         auth_header = request.headers.get('Authorization')
         access_token = auth_header.split(" ")[1]
+        if request.values.get('page'):
+            page = int(request.values.get('page'))
+        else:
+            page = 1
+        if request.values.get('limit'):
+            limit = int(request.values.get('limit'))
+        else:
+            limit = 20
         if access_token:
             user_id = User.decode_token(access_token)
             if not isinstance(user_id, str):
-                recipes = Recipe.query.filter_by(user_id=user_id)
+                recipes = Recipe.query.filter_by(user_id=user_id).paginate(page, limit)
                 results = []
-                for recipe in recipes:
+                for recipe in recipes.items:
                     obj = {
                         'id': recipe.id,
                         'title': recipe.title,
@@ -149,7 +157,51 @@ class RecipeSpecificView(MethodView):
                 if not recipe:
                     abort(404)
                 recipe.delete()
-                return {"message": "recipe {} has been deleted".format(recipe.id)}, 200
+                return {"message": "recipe {} has been deleted".format(recipe.title)}, 200
+            else:
+                message = user_id
+                response = {'message': message}
+                return make_response(jsonify(response)), 401
+
+class RecipeSearchView(MethodView):
+    """Allows for searching of a recipe."""
+    methods = ['GET']
+
+    def get(self):
+        """Process GET request"""
+        auth_header = request.headers.get('Authorization')
+        access_token = auth_header.split(" ")[1]
+        if request.values.get('q'):
+            q = request.values.get('q')
+        else:
+            q = ''
+        if request.values.get('page'):
+            page = int(request.values.get('page'))
+        else:
+            page = 1
+        if request.values.get('limit'):
+            limit = int(request.values.get('limit'))
+        else:
+            limit = 20
+        if access_token:
+            user_id = User.decode_token(access_token)
+            if not isinstance(user_id, str):
+                recipes = Recipe.query.filter(Recipe.title.like('%' + q + '%')). \
+                        filter_by(user_id=user_id).paginate(page, limit)
+                results = []
+                for recipe in recipes.items:
+                    obj = {
+                        'id': recipe.id,
+                        'title': recipe.title,
+                        'ingredients': recipe.ingredients,
+                        'directions': recipe.directions,
+                        'category_id': recipe.category_id,
+                        'user_id': recipe.user_id,
+                        'date_created': recipe.date_created,
+                        'date_modified': recipe.date_modified
+                    }
+                    results.append(obj)
+                return make_response(jsonify(results)), 200
             else:
                 message = user_id
                 response = {'message': message}
@@ -157,3 +209,4 @@ class RecipeSpecificView(MethodView):
 
 recipe_view = RecipeView.as_view('recipe_view')
 recipe_specific_view = RecipeSpecificView.as_view('recipe_specific_view')
+recipe_search_view = RecipeSearchView.as_view('recipe_search_view')

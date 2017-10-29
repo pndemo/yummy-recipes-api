@@ -17,12 +17,14 @@ def create_app(config_name):
     from app.auth import auth_blueprint
     app.register_blueprint(auth_blueprint)
 
-    from app.category.views import category_view, category_specific_view
+    from app.category.views import category_view, category_specific_view, category_search_view
     app.add_url_rule('/category/', view_func=category_view)
     app.add_url_rule('/category/<int:category_id>', view_func=category_specific_view)
+    app.add_url_rule('/category/search', view_func=category_search_view)
 
-    from app.recipe.views import recipe_view, recipe_specific_view
+    from app.recipe.views import recipe_view, recipe_specific_view, recipe_search_view
     app.add_url_rule('/recipe/', view_func=recipe_view)
     app.add_url_rule('/recipe/<int:recipe_id>', view_func=recipe_specific_view)
+    app.add_url_rule('/recipe/search', view_func=recipe_search_view)
 
     return app

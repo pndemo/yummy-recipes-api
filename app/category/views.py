@@ -40,12 +40,20 @@ class CategoryView(MethodView):
         """Process GET request"""
         auth_header = request.headers.get('Authorization')
         access_token = auth_header.split(" ")[1]
+        if request.values.get('page'):
+            page = int(request.values.get('page'))
+        else:
+            page = 1
+        if request.values.get('limit'):
+            limit = int(request.values.get('limit'))
+        else:
+            limit = 20
         if access_token:
             user_id = User.decode_token(access_token)
             if not isinstance(user_id, str):
-                categories = Category.query.filter_by(user_id=user_id)
+                categories = Category.query.filter_by(user_id=user_id).paginate(page, limit)
                 results = []
-                for category in categories:
+                for category in categories.items:
                     obj = {
                         'id': category.id,
                         'category_name': category.category_name,
@@ -124,11 +132,53 @@ class CategorySpecificView(MethodView):
                 if not category:
                     abort(404)
                 category.delete()
-                return {"message": "category {} has been deleted".format(category.id)}, 200
+                return {"message": "category {} has been deleted". \
+                        format(category.category_name)}, 200
             else:
                 message = user_id
                 response = {'message': message}
                 return make_response(jsonify(response)), 401
 
+class CategorySearchView(MethodView):
+    """Allows for searching of a category."""
+    methods = ['GET']
+
+    def get(self):
+        """Process GET request"""
+        auth_header = request.headers.get('Authorization')
+        access_token = auth_header.split(" ")[1]
+        if request.values.get('q'):
+            q = request.values.get('q')
+        else:
+            q = ''
+        if request.values.get('page'):
+            page = int(request.values.get('page'))
+        else:
+            page = 1
+        if request.values.get('limit'):
+            limit = int(request.values.get('limit'))
+        else:
+            limit = 20
+        if access_token:
+            user_id = User.decode_token(access_token)
+            if not isinstance(user_id, str):
+                categories = Category.query.filter(Category.category_name.like('%' + q + \
+                        '%')).filter_by(user_id=user_id).paginate(page, limit)
+                results = []
+                for category in categories.items:
+                    obj = {
+                        'id': category.id,
+                        'category_name': category.category_name,
+                        'user_id': category.user_id,
+                        'date_created': category.date_created,
+                        'date_modified': category.date_modified
+                    }
+                    results.append(obj)
+                return make_response(jsonify(results)), 200
+            else:
+                response = {'message': user_id}
+                return make_response(jsonify(response)), 401
+
 category_view = CategoryView.as_view('category_view')
 category_specific_view = CategorySpecificView.as_view('category_specific_view')
+category_search_view = CategorySearchView.as_view('category_search_view')

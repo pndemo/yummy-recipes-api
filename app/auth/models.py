@@ -49,7 +49,7 @@ class User(db.Model):
         """Generate user token"""
         try:
             payload = {
-                'exp': datetime.utcnow() + timedelta(minutes=5),
+                'exp': datetime.utcnow() + timedelta(minutes=30),
                 'iat': datetime.utcnow(),
                 'sub': user_id
             }
