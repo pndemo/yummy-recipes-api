@@ -2,17 +2,14 @@ language: python
 python:
   - "3.5"
 
-postgres:
-  adapter: postgresql
-  database: yummydb_test
-  username: postgres
+services:
+  - postgresql
   
 install:
   - pip install -r requirements.txt
 
 before_script:
-  - "psql -c 'create database yummydb_test;' -U postgres"
-  - "rake db:migrate"
+  - psql -c 'create database yummydb_test;' -U postgres
   
 script:
   - nosetests --exe -v
