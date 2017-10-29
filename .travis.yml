@@ -11,8 +11,7 @@ install:
   - pip install -r requirements.txt
 
 before_script:
-  - "psql -c 'createuser yummyadmin;'"
-  - "psql -c 'createdb yummydb_test;' -U yummyadmin"
+  - "psql -c 'create database yummydb_test;' -U postgres"
   - "rake db:migrate"
   
 script:
