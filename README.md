@@ -15,20 +15,14 @@ This app enables you to access Yummy Recipes resources, a platform for users to 
   <li>Clone Yummy Recipes API from GitHub to your local machine.</li>
   <p><code>$ git clone https://github.com/pndemo/yummy-recipes-api.git</code></p>
   <li>Change directory to yummy-recipes-api</li>
-  ```$ cd yummy-recipes-api```
+  <p><code>$ cd yummy-recipes-api</code></p>
   <li>Create virtual environment</li>
-  ```$ virtualenv venv```
+  <p><code>$ virtualenv venv</code></p>
   <li>Activate virtual environment</li>
-  ```$ source venv/bin/activate```
+  <p><code>$ source venv/bin/activate</code></p>
   <li>Install application requirements in virtual environment</li>
-  ```$ pip install -r requirements.txt```
+  <p><code>$ pip install -r requirements.txt</code></p>
   <li>Run the application</li>
-  ```$ export FLASK_APP=run.py```
-  ```$ flask run```
-</ol> 
-```
-$ git clone https://github.com/pndemo/yummy-recipes-api.git
-```
-<code>
-Give examples
-</code>
+  <p><code>$ export FLASK_APP=run.py</code></p>
+  <p><code>$ flask run</code></p>
+</ol>
