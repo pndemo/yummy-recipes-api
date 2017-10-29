@@ -2,13 +2,11 @@
 
 from datetime import datetime, timedelta
 import jwt
-from app import create_app, db
+from app import db
 from flask_bcrypt import Bcrypt
 
 # pylint: disable=C0103
 # pylint: disable=W0703
-
-app = create_app('development')
 
 class User(db.Model):
     """Define the 'User' model mapped to database table 'users'."""
@@ -33,6 +31,10 @@ class User(db.Model):
         """Check if password is valid"""
         return Bcrypt().check_password_hash(self.password, password)
 
+    def hash_password(self, password):
+        """Encrypt password before storage"""
+        return Bcrypt().generate_password_hash(password).decode()
+
     def save(self):
         """Save to database table"""
         db.session.add(self)
@@ -43,8 +45,7 @@ class User(db.Model):
         db.session.delete(self)
         db.session.commit()
 
-    @staticmethod
-    def generate_token(user_id):
+    def encode_token(self, user_id):
         """Generate user token"""
         try:
             payload = {
@@ -52,22 +53,51 @@ class User(db.Model):
                 'iat': datetime.utcnow(),
                 'sub': user_id
             }
-            jwt_string = jwt.encode(
+            return jwt.encode(
                 payload,
-                app.config.get('SECRET'),
+                'hdjHD&*JDMDRS^&ghdD67dJHD%efgGHJDm877$$6&mbd#@bbdFGhj',
                 algorithm='HS256'
             )
-            return jwt_string
-        except Exception as e:
-            return str(e)
+        except Exception as exp:
+            return str(exp)
 
     @staticmethod
     def decode_token(token):
         """Decode user token"""
         try:
-            payload = jwt.decode(token, app.config.get('SECRET'))
+            payload = jwt.decode(
+                token,
+                'hdjHD&*JDMDRS^&ghdD67dJHD%efgGHJDm877$$6&mbd#@bbdFGhj',
+                algorithms=['HS256']
+            )
             return payload['sub']
         except jwt.ExpiredSignatureError:
-            return "Sorry, this token has expired."
+            return 'Sorry, this token has expired.'
         except jwt.InvalidTokenError:
-            return "Sorry, this token is invalid."
+            return 'Sorry, this token is invalid.'
+
+class RevokedToken(db.Model):
+    """Define the 'RevokedToken' model mapped to database table 'revoked_tokens'."""
+
+    __tablename__ = 'revoked_tokens'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(500), unique=True, nullable=False)
+    revoked_on = db.Column(db.DateTime, nullable=False)
+
+    def __init__(self, token):
+        self.token = token
+        self.revoked_on = datetime.now()
+
+    def __repr__(self):
+        return '<id: token: {}'.format(self.token)
+
+    def save(self):
+        """Save to database table"""
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        """Delete from database table"""
+        db.session.delete(self)
+        db.session.commit()
