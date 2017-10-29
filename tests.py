@@ -1,4 +1,4 @@
-""" Unittests for auth, category and recipe modules """
+""" Unit tests for auth, category and recipe modules """
 
 import unittest
 import json
