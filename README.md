@@ -28,6 +28,9 @@ This app enables you to access Yummy Recipes resources, a platform for users to 
   ```$ export FLASK_APP=run.py```
   ```$ flask run```
 </ol> 
-```sh
+```
 $ git clone https://github.com/pndemo/yummy-recipes-api.git
+```
+```
+Give examples
 ```
