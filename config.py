@@ -11,7 +11,7 @@ class Config(object):
 class TestingConfig(Config):
     """Testing configurations."""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'postgresql://yummyadmin:ecclipse@localhost:5432/yummydb_test'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/yummydb_test'
     DEBUG = True
 
 class DevelopmentConfig(Config):

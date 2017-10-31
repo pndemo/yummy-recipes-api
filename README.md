@@ -1,10 +1,28 @@
 <h1>Yummy Recipes API</h1>
 <a href="https://travis-ci.org/pndemo/yummy-recipes-api">
-<img class="notice-badge" src="https://travis-ci.org/pndemo/yummy-recipes-api.svg?branch=master" alt="Badge"/>
+<img class="notice-badge" src="https://travis-ci.org/pndemo/yummy-recipes-api.svg?branch=develop" alt="Badge"/>
 </a>
 <a href="https://coveralls.io/github/pndemo/yummy-recipes-api">
-<img class="notice-badge" src="https://coveralls.io/repos/github/pndemo/yummy-recipes-api/badge.svg?branch=master" alt="Badge"/>
+<img class="notice-badge" src="https://coveralls.io/repos/github/pndemo/yummy-recipes-api/badge.svg?branch=develop" alt="Badge"/>
 </a>
 <br/>
-<h4>About Yummy Recipes APIs</h4>
+<h2>About Yummy Recipes API</h2>
 This app enables you to access Yummy Recipes resources, a platform for users to keep track of their awesome recipes and share with others if they so wish. The API functionalities include: creation of new user accounts, user login, password reset, creation of new recipe categories, viewing of recipe categories, updating of recipe categories, deletion of recipe categories, creation of new recipes, viewing of recipes, updating of recipes and deletion of recipes.
+<br/>
+<h2>Installation</h2>
+<ol>
+  <li>Install Python (preferably, version >= 3.5).</li>
+  <li>Clone Yummy Recipes API from GitHub to your local machine.</li>
+  <p><code>$ git clone https://github.com/pndemo/yummy-recipes-api.git</code></p>
+  <li>Change directory to yummy-recipes-api</li>
+  <p><code>$ cd yummy-recipes-api</code></p>
+  <li>Create virtual environment</li>
+  <p><code>$ virtualenv venv</code></p>
+  <li>Activate virtual environment</li>
+  <p><code>$ source venv/bin/activate</code></p>
+  <li>Install application requirements in virtual environment</li>
+  <p><code>$ pip install -r requirements.txt</code></p>
+  <li>Run the application</li>
+  <p><code>$ export FLASK_APP=run.py</code></p>
+  <p><code>$ flask run</code></p>
+</ol>
