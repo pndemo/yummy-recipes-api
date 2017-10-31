@@ -64,16 +64,20 @@ class User(db.Model):
     @staticmethod
     def decode_token(token):
         """Decode user token"""
-        try:
-            payload = jwt.decode(
-                token,
-                'hdjHD&*JDMDRS^&ghdD67dJHD%efgGHJDm877$$6&mbd#@bbdFGhj',
-                algorithms=['HS256']
-            )
-            return payload['sub']
-        except jwt.ExpiredSignatureError:
-            return 'Sorry, this token has expired.'
-        except jwt.InvalidTokenError:
+        revoked_token = RevokedToken.query.filter_by(token=str(token)).first()
+        if not revoked_token:
+            try:
+                payload = jwt.decode(
+                    token,
+                    'hdjHD&*JDMDRS^&ghdD67dJHD%efgGHJDm877$$6&mbd#@bbdFGhj',
+                    algorithms=['HS256']
+                )
+                return payload['sub']
+            except jwt.ExpiredSignatureError:
+                return 'Sorry, this token has expired.'
+            except jwt.InvalidTokenError:
+                return 'Sorry, this token is invalid.'
+        else:
             return 'Sorry, this token is invalid.'
 
 class RevokedToken(db.Model):
