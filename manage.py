@@ -3,9 +3,9 @@
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from app import db, create_app
-from app.auth import models
-from app.category import models
-from app.recipe import models
+from app.v1.auth import auth_models
+from app.v1.category import category_models
+from app.v1.recipe import recipe_models
 
 # pylint: disable=C0103
 
