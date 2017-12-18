@@ -22,6 +22,9 @@ class CategoryTests(unittest.TestCase):
         result = self.client().post('/api/v1/auth/login', data=self.user_data)
         access_token = json.loads(result.data.decode())['access_token']
         res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+                access_token + 'GyHhdE'), data=self.category)
+        self.assertEqual(res.status_code, 401)
+        res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
                 access_token), data=self.category)
         self.assertEqual(res.status_code, 201)
         self.assertIn('Breakfast', str(res.data))
@@ -34,6 +37,9 @@ class CategoryTests(unittest.TestCase):
         res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
                 access_token), data=self.category)
         self.assertEqual(res.status_code, 201)
+        res = self.client().get('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+                access_token + 'GyHhdE'))
+        self.assertEqual(res.status_code, 401)
         res = self.client().get('/api/v1/category/', headers=dict(Authorization="Bearer " + \
                 access_token))
         self.assertEqual(res.status_code, 200)
@@ -52,6 +58,9 @@ class CategoryTests(unittest.TestCase):
                 access_token), data=self.category)
         self.assertEqual(res.status_code, 201)
         results = json.loads(res.data.decode())
+        res = self.client().get('/api/v1/category/{}'.format(results['id']), headers= \
+                dict(Authorization="Bearer " + access_token + 'GyHhdE'))
+        self.assertEqual(res.status_code, 401)
         result = self.client().get('/api/v1/category/{}'.format(results['id']), \
                 headers=dict(Authorization="Bearer " + access_token))
         self.assertEqual(result.status_code, 200)
@@ -66,6 +75,9 @@ class CategoryTests(unittest.TestCase):
                 access_token), data={'category_name': 'Desserts'})
         self.assertEqual(res.status_code, 201)
         results = json.loads(res.data.decode())
+        res = self.client().put('/api/v1/category/{}'.format(results['id']), headers= \
+                dict(Authorization="Bearer " + access_token + 'GyHhdE'), data=self.category)
+        self.assertEqual(res.status_code, 401)
         res = self.client().put('/api/v1/category/{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + access_token), data={'category_name': 'Snacks'})
         self.assertEqual(res.status_code, 200)
@@ -84,6 +96,9 @@ class CategoryTests(unittest.TestCase):
         self.assertEqual(res.status_code, 201)
         results = json.loads(res.data.decode())
         category_id = results['id']
+        res = self.client().get('/api/v1/category/{}'.format(results['id']), headers= \
+                dict(Authorization="Bearer " + access_token + 'GyHhdE'))
+        self.assertEqual(res.status_code, 401)
         res = self.client().delete('/api/v1/category/{}'.format(category_id), headers= \
                 dict(Authorization="Bearer " + access_token))
         self.assertEqual(res.status_code, 200)
@@ -99,6 +114,9 @@ class CategoryTests(unittest.TestCase):
         res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
                 access_token), data=self.category)
         self.assertEqual(res.status_code, 201)
+        res = self.client().get('/api/v1/category/search', headers=dict(Authorization="Bearer " + \
+                access_token + 'GyHhdE'))
+        self.assertEqual(res.status_code, 401)
         res = self.client().get('/api/v1/category/search?q={}'.format(self.category['category_name']), \
                 headers=dict(Authorization="Bearer " + access_token))
         self.assertEqual(res.status_code, 200)
