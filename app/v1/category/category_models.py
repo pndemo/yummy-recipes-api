@@ -35,8 +35,3 @@ class Category(db.Model):
         """Delete from database table"""
         db.session.delete(self)
         db.session.commit()
-
-    @staticmethod
-    def get_all(user_id):
-        """Get specific user's categories"""
-        return Category.query.filter_by(user_id=user_id)
