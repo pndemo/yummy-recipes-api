@@ -21,14 +21,14 @@ class RecipeView(MethodView):
         if access_token:
             user_id = User.decode_token(access_token)
             if not isinstance(user_id, str):
-                category = Category.query.filter_by(id=category_id, user_id=user_id)
-                if category:
+                try:
+                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
                     title = str(request.data.get('title', ''))
                     ingredients = str(request.data.get('ingredients', ''))
                     directions = str(request.data.get('directions', ''))
                     if title and ingredients and directions:
                         recipe = Recipe(title=title, ingredients=ingredients, directions= \
-                                directions, category_id=category_id)
+                                directions, category_id=category.id)
                         recipe.save()
                         response = jsonify({
                             'id': recipe.id,
@@ -40,10 +40,10 @@ class RecipeView(MethodView):
                             'date_modified': recipe.date_modified
                         })
                         return make_response(response), 201
-                else:
-                    message = category_id
+                except Exception as exp:
+                    message = str(exp)
                     response = {'message': message}
-                    return make_response(jsonify(response)), 401
+                    return make_response(jsonify(response)), 404
             else:
                 message = user_id
                 response = {'message': message}
@@ -64,9 +64,9 @@ class RecipeView(MethodView):
         if access_token:
             user_id = User.decode_token(access_token)
             if not isinstance(user_id, str):
-                category = Category.query.filter_by(id=category_id, user_id=user_id)
-                if category:
-                    recipes = Recipe.query.filter_by(category_id=category_id).paginate(page, limit)
+                try:
+                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
+                    recipes = Recipe.query.filter_by(category_id=category.id).paginate(page, limit)
                     results = []
                     for recipe in recipes.items:
                         obj = {
@@ -80,10 +80,10 @@ class RecipeView(MethodView):
                         }
                         results.append(obj)
                     return make_response(jsonify(results)), 200
-                else:
-                    message = category_id
+                except Exception as exp:
+                    message = str(exp)
                     response = {'message': message}
-                    return make_response(jsonify(response)), 401
+                    return make_response(jsonify(response)), 404
             else:
                 message = user_id
                 response = {'message': message}
@@ -100,11 +100,9 @@ class RecipeSpecificView(MethodView):
         if access_token:
             user_id = User.decode_token(access_token)
             if not isinstance(user_id, str):
-                category = Category.query.filter_by(id=category_id, user_id=user_id)
-                if category:
-                    recipe = Recipe.query.filter_by(id=recipe_id, category_id=category_id).first()
-                    if not recipe:
-                        abort(404)
+                try:
+                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
+                    recipe = Recipe.query.filter_by(id=recipe_id, category_id=category.id).first()
                     response = jsonify({
                         'id': recipe.id,
                         'title': recipe.title,
@@ -115,10 +113,10 @@ class RecipeSpecificView(MethodView):
                         'date_modified': recipe.date_modified
                     })
                     return make_response(response), 200
-                else:
-                    message = category_id
+                except Exception as exp:
+                    message = str(exp)
                     response = {'message': message}
-                    return make_response(jsonify(response)), 401
+                    return make_response(jsonify(response)), 404
             else:
                 message = user_id
                 response = {'message': message}
@@ -131,11 +129,9 @@ class RecipeSpecificView(MethodView):
         if access_token:
             user_id = User.decode_token(access_token)
             if not isinstance(user_id, str):
-                category = Category.query.filter_by(id=category_id, user_id=user_id)
-                if category:
-                    recipe = Recipe.query.filter_by(id=recipe_id, category_id=category_id).first()
-                    if not recipe:
-                        abort(404)
+                try:
+                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
+                    recipe = Recipe.query.filter_by(id=recipe_id, category_id=category.id).first()
                     title = str(request.data.get('title', ''))
                     ingredients = str(request.data.get('ingredients', ''))
                     directions = str(request.data.get('directions', ''))
@@ -153,10 +149,10 @@ class RecipeSpecificView(MethodView):
                         'date_modified': recipe.date_modified
                     })
                     return make_response(response), 200
-                else:
-                    message = category_id
+                except Exception as exp:
+                    message = str(exp)
                     response = {'message': message}
-                    return make_response(jsonify(response)), 401
+                    return make_response(jsonify(response)), 404
             else:
                 message = user_id
                 response = {'message': message}
@@ -169,17 +165,15 @@ class RecipeSpecificView(MethodView):
         if access_token:
             user_id = User.decode_token(access_token)
             if not isinstance(user_id, str):
-                category = Category.query.filter_by(id=category_id, user_id=user_id)
-                if category:
-                    recipe = Recipe.query.filter_by(id=recipe_id, category_id=category_id).first()
-                    if not recipe:
-                        abort(404)
+                try:
+                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
+                    recipe = Recipe.query.filter_by(id=recipe_id, category_id=category.id).first()
                     recipe.delete()
                     return {"message": "recipe {} has been deleted".format(recipe.title)}, 200
-                else:
-                    message = category_id
+                except Exception as exp:
+                    message = str(exp)
                     response = {'message': message}
-                    return make_response(jsonify(response)), 401
+                    return make_response(jsonify(response)), 404
             else:
                 message = user_id
                 response = {'message': message}
@@ -208,10 +202,10 @@ class RecipeSearchView(MethodView):
         if access_token:
             user_id = User.decode_token(access_token)
             if not isinstance(user_id, str):
-                category = Category.query.filter_by(id=category_id, user_id=user_id)
-                if category:
+                try:
+                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
                     recipes = Recipe.query.filter(Recipe.title.like('%' + q + '%')). \
-                            filter_by(category_id=category_id).paginate(page, limit)
+                            filter_by(category_id=category.id).paginate(page, limit)
                     results = []
                     for recipe in recipes.items:
                         obj = {
@@ -225,10 +219,10 @@ class RecipeSearchView(MethodView):
                         }
                         results.append(obj)
                     return make_response(jsonify(results)), 200
-                else:
-                    message = category_id
+                except Exception as exp:
+                    message = str(exp)
                     response = {'message': message}
-                    return make_response(jsonify(response)), 401
+                    return make_response(jsonify(response)), 404
             else:
                 message = user_id
                 response = {'message': message}
