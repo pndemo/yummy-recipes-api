@@ -36,6 +36,12 @@ class RecipeTests(unittest.TestCase):
         self.assertEqual(res.status_code, 201)
         results = json.loads(res.data.decode())
         category_id = results['id']
+        res = self.client().post('/api/v1/recipe/{}/'.format(2), headers=dict(Authorization= \
+                "Bearer " + access_token + 'GyHhdE'), data=self.recipe)
+        self.assertEqual(res.status_code, 401)
+        res = self.client().post('/api/v1/recipe/{}/'.format(2), headers= \
+                dict(Authorization="Bearer " + access_token), data=self.recipe)
+        self.assertEqual(res.status_code, 404)
         res = self.client().post('/api/v1/recipe/{}/'.format(category_id), headers= \
                 dict(Authorization="Bearer " + access_token), data=self.recipe)
         self.assertEqual(res.status_code, 201)
@@ -54,6 +60,12 @@ class RecipeTests(unittest.TestCase):
         res = self.client().post('/api/v1/recipe/{}/'.format(category_id), headers= \
                 dict(Authorization="Bearer " + access_token), data=self.recipe)
         self.assertEqual(res.status_code, 201)
+        res = self.client().get('/api/v1/recipe/{}/'.format(2), headers=dict(Authorization= \
+                "Bearer " + access_token + 'GyHhdE'))
+        self.assertEqual(res.status_code, 401)
+        res = self.client().get('/api/v1/recipe/{}/'.format(2), headers= \
+                dict(Authorization="Bearer " + access_token))
+        self.assertEqual(res.status_code, 404)
         res = self.client().get('/api/v1/recipe/{}/'.format(category_id), headers= \
                 dict(Authorization="Bearer " + access_token))
         self.assertEqual(res.status_code, 200)
@@ -62,7 +74,6 @@ class RecipeTests(unittest.TestCase):
                 dict(Authorization="Bearer " + access_token))
         self.assertEqual(res.status_code, 200)
         self.assertIn('Espresso Esiri', str(res.data))
-
 
     def test_get_recipe_by_id(self):
         """Test API for GET request (specific recipe by id)"""
@@ -78,6 +89,12 @@ class RecipeTests(unittest.TestCase):
                 dict(Authorization="Bearer " + access_token), data=self.recipe)
         self.assertEqual(res.status_code, 201)
         results = json.loads(res.data.decode())
+        res = self.client().get('/api/v1/recipe/{}/{}'.format(2, 2), headers=dict(Authorization= \
+                "Bearer " + access_token + 'GyHhdE'))
+        self.assertEqual(res.status_code, 401)
+        res = self.client().get('/api/v1/recipe/{}/{}'.format(2, 2), headers= \
+                dict(Authorization="Bearer " + access_token))
+        self.assertEqual(res.status_code, 404)
         result = self.client().get('/api/v1/recipe/{}/{}'.format(category_id, results['id']), \
                 headers=dict(Authorization="Bearer " + access_token))
         self.assertEqual(result.status_code, 200)
@@ -93,7 +110,7 @@ class RecipeTests(unittest.TestCase):
         self.assertEqual(res.status_code, 201)
         results = json.loads(res.data.decode())
         category_id = results['id']
-        res = self.client().post('/api/v1/recipe/1/'.format(category_id), headers= \
+        res = self.client().post('/api/v1/recipe/{}/'.format(category_id), headers= \
                 dict(Authorization="Bearer " + access_token), data=self.recipe)
         self.assertEqual(res.status_code, 201)
         results = json.loads(res.data.decode())
@@ -110,6 +127,12 @@ class RecipeTests(unittest.TestCase):
                 batter over apple layer; top with remaining apples and brown sugar mixture. \
                 4) Bake in the preheated oven until a toothpick inserted in the center of the \
                 loaf comes out clean, 30 to 40 minutes.'
+        res = self.client().put('/api/v1/recipe/{}/{}'.format(2, 2), headers=dict(Authorization= \
+                "Bearer " + access_token + 'GyHhdE'), data=self.recipe)
+        self.assertEqual(res.status_code, 401)
+        res = self.client().put('/api/v1/recipe/{}/{}'.format(2, 2), headers= \
+                dict(Authorization="Bearer " + access_token), data=self.recipe)
+        self.assertEqual(res.status_code, 404)
         res = self.client().put('/api/v1/recipe/{}/{}'.format(category_id, results['id']), \
                 headers=dict(Authorization="Bearer " + access_token), data=self.recipe)
         self.assertEqual(res.status_code, 200)
@@ -132,6 +155,12 @@ class RecipeTests(unittest.TestCase):
                 dict(Authorization="Bearer " + access_token), data=self.recipe)
         self.assertEqual(res.status_code, 201)
         results = json.loads(res.data.decode())
+        res = self.client().delete('/api/v1/recipe/{}/{}'.format(2, 2), headers=dict(Authorization= \
+                "Bearer " + access_token + 'GyHhdE'))
+        self.assertEqual(res.status_code, 401)
+        res = self.client().delete('/api/v1/recipe/{}/{}'.format(2, 2), headers= \
+                dict(Authorization="Bearer " + access_token))
+        self.assertEqual(res.status_code, 404)
         res = self.client().delete('/api/v1/recipe/{}/{}'.format(category_id, results['id']), \
                 headers=dict(Authorization="Bearer " + access_token))
         self.assertEqual(res.status_code, 200)
@@ -152,6 +181,12 @@ class RecipeTests(unittest.TestCase):
         res = self.client().post('/api/v1/recipe/{}/'.format(category_id), headers= \
                 dict(Authorization="Bearer " + access_token), data=self.recipe)
         self.assertEqual(res.status_code, 201)
+        res = self.client().get('/api/v1/recipe/{}/search'.format(2), headers= \
+                dict(Authorization="Bearer " + access_token + 'GyHhdE'))
+        self.assertEqual(res.status_code, 401)
+        res = self.client().get('/api/v1/recipe/{}/search'.format(2), headers= \
+                dict(Authorization="Bearer " + access_token))
+        self.assertEqual(res.status_code, 404)
         res = self.client().get('/api/v1/recipe/{}/search?q={}'.format(category_id, \
                 self.recipe['title']), headers=dict(Authorization="Bearer " + access_token))
         self.assertEqual(res.status_code, 200)
