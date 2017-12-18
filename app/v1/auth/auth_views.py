@@ -115,6 +115,7 @@ register_view = RegisterView.as_view('register_view')
 login_view = LoginView.as_view('login_view')
 reset_password_view = ResetPasswordView.as_view('reset_password_view')
 logout_view = LogoutView.as_view('logout_view')
+
 auth_blueprint.add_url_rule('/api/v1/auth/register', view_func=register_view, methods=['POST'])
 auth_blueprint.add_url_rule('/api/v1/auth/login', view_func=login_view, methods=['POST'])
 auth_blueprint.add_url_rule('/api/v1/auth/reset_password', view_func=reset_password_view, \
