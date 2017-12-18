@@ -41,11 +41,6 @@ class User(db.Model):
         db.session.add(self)
         db.session.commit()
 
-    def delete(self):
-        """Delete from database table"""
-        db.session.delete(self)
-        db.session.commit()
-
     def encode_token(self, user_id):
         """Generate user token"""
         try:
@@ -100,9 +95,4 @@ class RevokedToken(db.Model):
     def save(self):
         """Save to database table"""
         db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        """Delete from database table"""
-        db.session.delete(self)
         db.session.commit()
