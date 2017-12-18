@@ -15,6 +15,12 @@ class TestingConfig(Config):
     #SQLALCHEMY_DATABASE_URI = 'postgresql://yummyadmin:ecclipse@localhost:5432/yummydb_test'
     DEBUG = True
 
+class TestingInvalidConfig(Config):
+    """Testing invalid credentials."""
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'postgresql://yummyadmin:eclipse@localhost:5432/yummydb_test'
+    DEBUG = True
+
 class DevelopmentConfig(Config):
     """Development configurations."""
     DEBUG = True
@@ -29,5 +35,6 @@ class ProductionConfig(Config):
 app_config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
+    'testing_invalid': TestingInvalidConfig,
     'production': ProductionConfig,
 }
