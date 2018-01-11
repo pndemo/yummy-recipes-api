@@ -2,10 +2,10 @@
 
 from flask.views import MethodView
 
-from flask import request, jsonify, abort, make_response
-from app.v1.auth.auth_models import User
-from app.v1.category.category_models import Category
-from app.v1.recipe.recipe_models import Recipe
+from flask import request, jsonify, make_response
+from app.v1.models.auth_models import User
+from app.v1.models.category_models import Category
+from app.v1.models.recipe_models import Recipe
 
 # pylint: disable=C0103
 # pylint: disable=W0703

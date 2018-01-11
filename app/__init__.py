@@ -1,18 +1,50 @@
 """ Initial application specifications """
 
-from flask_api import FlaskAPI
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from config import app_config
 from flasgger import Swagger
 
+# pylint: disable=C0103
+
 db = SQLAlchemy()
 
 def create_app(config_name):
-    """Function for creating application depending on configuration"""
-    app = FlaskAPI(__name__, instance_relative_config=True)
+    """ Function for creating application depending on configuration """
+
+    app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(app_config[config_name])
 
-    Swagger(app)
+    template = {
+        "swagger": "2.0",
+        "info": {
+            "title": "Yummy Recipes API",
+            "description": "This app enables you to access Yummy Recipes resources, a platform \
+                    for users to keep track of their awesome recipes and share with others if \
+                    they so wish. The API functionalities include: creation of new user \
+                    accounts, user login, password reset, creation of new recipe categories, \
+                    viewing of recipe categories, updating of recipe categories, deletion of \
+                    recipe categories, creation of new recipes, viewing of recipes, updating of \
+                    recipes and deletion of recipes.",
+            "contact": {
+                "responsibleOrganization": "Yummy Recipes Inc.",
+                "responsibleDeveloper": "Paul Ndemo Oroko",
+                "url": "https://github.com/pndemo/yummy-recipes-api",
+            }
+        },
+        #"host": "yummy-recipes-api.herokuapp.com",
+        "schemes": ["http", "https"],
+        'securityDefinitions': {
+            "Bearer": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    }
+
+    Swagger(app, template=template)
+
     db.init_app(app)
 
     from app.v1.auth import auth_blueprint

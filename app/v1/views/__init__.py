@@ -6,4 +6,4 @@ from flask import Blueprint
 
 auth_blueprint = Blueprint('auth', __name__)
 
-from app.v1.auth import auth_views
+from app.v1.views import auth_views
