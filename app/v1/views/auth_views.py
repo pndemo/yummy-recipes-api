@@ -4,7 +4,9 @@ from flask import jsonify
 from flask_restful import Resource, reqparse
 from sqlalchemy import exc
 from app.v1.models.auth_models import User, RevokedToken
-from app.v1.validators.auth_validators import validate_user_email, validate_password
+from app.v1.validators import data_validator
+from app.v1.validators.auth_validators import validate_username, validate_user_email, \
+        validate_password, validate_confirm_password
 from app.v1.views import auth_blueprint
 from app.v1.utils.decorators import authenticate
 
@@ -16,8 +18,10 @@ class RegisterView(Resource):
     """ Enables a user to create a new account. """
 
     parser = reqparse.RequestParser()
+    parser.add_argument('username', type=str, help='User\'s username')
     parser.add_argument('email', type=str, help='User\'s email address')
     parser.add_argument('password', type=str, help='User\'s password')
+    parser.add_argument('confirm_password', type=str, help='Confirm user\'s password')
 
     def post(self):
         """
@@ -33,10 +37,16 @@ class RegisterView(Resource):
             type: string
             schema:
               properties:
+                username:
+                  type: string
+                  default: newuser
                 email:
                   type: string
                   default: example@domain.com
                 password:
+                  type: string
+                  default: Bootcamp17
+                confirm_password:
                   type: string
                   default: Bootcamp17
         responses:
@@ -44,8 +54,6 @@ class RegisterView(Resource):
             description: A new user account created successfully
           400:
             description: Data validation failed
-          409:
-            description: A user with new user's email address is already registered
           500:
             description: Database could not be accessed
         """
@@ -53,24 +61,20 @@ class RegisterView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['email_validation_message'] = validate_user_email(args.email)
-        messages['password_validation_message'] = validate_password(args.password)
+        messages['username_message'] = validate_username(args.username, register=True)
+        messages['email_message'] = validate_user_email(args.email, register=True)
+        messages['password_message'] = validate_password(args.password)
+        messages['confirm_password_message'] = validate_confirm_password(args.confirm_password, \
+                  args.password)
 
-        for _, value in messages.items():
-            if value != 'Valid':
-                return jsonify(messages), 400
+        if not data_validator(messages):
+            return jsonify(messages), 400
 
         try:
-            user = User.query.filter_by(email=args.email).first()
-            if not user:
-                user = User(email=args.email, password=args.password)
-                user.save()
-                response = jsonify({'message': 'Your user account has been created.'})
-                response.status_code = 201
-            else:
-                response = jsonify({'message': 'An account with this email address already \
-exists.'})
-                response.status_code = 409
+            user = User(username=args.username, email=args.email, password=args.password)
+            user.save()
+            response = jsonify({'message': 'Your account has been created.'})
+            response.status_code = 201
         except exc.SQLAlchemyError as error:
             response = jsonify({'message': str(error)})
             response.status_code = 500
@@ -80,7 +84,7 @@ class LoginView(Resource):
     """ Enables a user to login. """
 
     parser = reqparse.RequestParser()
-    parser.add_argument('email', type=str, help='User\'s email address')
+    parser.add_argument('username', type=str, help='User\'s username')
     parser.add_argument('password', type=str, help='User\'s password')
 
     def post(self):
@@ -97,9 +101,9 @@ class LoginView(Resource):
             type: string
             schema:
               properties:
-                email:
+                username:
                   type: string
-                  default: example@domain.com
+                  default: newuser
                 password:
                   type: string
                   default: Bootcamp17
@@ -108,6 +112,8 @@ class LoginView(Resource):
             description: User logged in to account successfully
           400:
             description: Data validation failed
+          401:
+            description: User authentication failed
           500:
             description: Database could not be accessed
         """
@@ -115,15 +121,14 @@ class LoginView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['email_validation_message'] = validate_user_email(args.email)
-        messages['password_validation_message'] = validate_password(args.password)
+        messages['username_message'] = validate_username(args.username)
+        messages['password_message'] = validate_password(args.password)
 
-        for _, value in messages.items():
-            if value != 'Valid':
-                return jsonify(messages), 400
+        if not data_validator(messages):
+            return jsonify(messages), 400
 
         try:
-            user = User.query.filter_by(email=args.email).first()
+            user = User.query.filter_by(username=args.username).first()
             if user and user.check_password(args.password):
                 access_token = user.encode_token(user.id)
                 if access_token:
@@ -150,7 +155,7 @@ class ResetPasswordView(Resource):
     parser.add_argument('new_password', type=str, help='User\'s new password')
     parser.add_argument('confirm_new_password', type=str, help='Confirm user\'s new password')
 
-    def post(self, user):
+    def post(self, access_token, user):
         """
         Process POST request
         ---
@@ -191,23 +196,19 @@ class ResetPasswordView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['current_password_validation_message'] = validate_password(args.current_password)
-        messages['new_password_validation_message'] = validate_password(args.new_password)
-        messages['confirm_new_password_validation_message'] = validate_password(args.confirm_new_password)
+        messages['current_password_message'] = validate_password(args.current_password)
+        messages['new_password_message'] = validate_password(args.new_password)
+        messages['confirm_new_password_message'] = validate_confirm_password \
+                (args.confirm_new_password, args.new_password)
 
-        for _, value in messages.items():
-            if value != 'Valid':
-                return jsonify(messages), 400
+        if not data_validator(messages):
+            return jsonify(messages), 400
 
         if user.check_password(args.current_password):
-            if args.new_password == args.confirm_new_password:
-                user.password = user.hash_password(password=args.new_password)
-                user.save()
-                response = jsonify({'message': 'Your password has been reset.'})
-                response.status_code = 200
-            else:
-                response = jsonify({'message': 'The new passwords entered do not match.'})
-                response.status_code = 400
+            user.password = user.hash_password(password=args.new_password)
+            user.save()
+            response = jsonify({'message': 'Your password has been reset.'})
+            response.status_code = 200
         else:
             response = jsonify({'message': 'The current password entered is incorrect.'})
             response.status_code = 401
@@ -218,7 +219,7 @@ class LogoutView(Resource):
 
     method_decorators = [authenticate]
 
-    def get(self, access_token, _):
+    def get(self, access_token, user):
         """
         Process GET request
         ---

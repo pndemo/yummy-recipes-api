@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 import jwt
 from flask_bcrypt import Bcrypt
-from config import Config
+from instance.config import Config
 from app import db
 from app.v1.utils.mixins import BaseMixin, TimestampMixin
 
@@ -15,16 +15,18 @@ class User(BaseMixin, TimestampMixin, db.Model):
 
     __tablename__ = 'users'
 
+    username = db.Column(db.String(80), nullable=False, unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
     categories = db.relationship('Category', order_by='Category.id', cascade="all, delete-orphan")
 
-    def __init__(self, email, password):
+    def __init__(self, username, email, password):
+        self.username = username
         self.email = email
-        self.password = Bcrypt().generate_password_hash(password)
+        self.password = Bcrypt().generate_password_hash(password).decode()
 
     def __repr__(self):
-        return "<User: {}>".format(self.email)
+        return "<User: {}>".format(self.username)
 
     def check_password(self, password):
         """Check if password is valid"""
@@ -32,7 +34,7 @@ class User(BaseMixin, TimestampMixin, db.Model):
 
     def hash_password(self, password):
         """Encrypt password before storage"""
-        return Bcrypt().generate_password_hash(password)
+        return Bcrypt().generate_password_hash(password).decode()
 
     def encode_token(self, user_id):
         """Generate user token"""
@@ -60,7 +62,7 @@ class User(BaseMixin, TimestampMixin, db.Model):
             return 'Sorry, this token is invalid.'
 
 class RevokedToken(BaseMixin, db.Model):
-    """Define the 'RevokedToken' model mapped to database table 'revoked_tokens'."""
+    """ Define the 'RevokedToken' model mapped to database table 'revoked_tokens'. """
 
     __tablename__ = 'revoked_tokens'
 
