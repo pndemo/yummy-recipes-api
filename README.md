@@ -69,7 +69,7 @@ GET /api/v1/recipe/<int:category_id>/search | Search for recipe given category_i
 
 <h2>Demo API</h2>
 <p>The demo API of the Yummy Recipes API app can be accessed using the link below.</p>
-<p><a href="https://sandbx.herokuapp.com/">https://sandbx.herokuapp.com/</p>
+<p><a href="https://yummy-recipes-apis.herokuapp.com/">https://yummy-recipes-apis.herokuapp.com/</p>
 <h2>Testing</h2>
 <p>Testing has been implemented using the unit testing framework of the Python language. To run tests, use the following command:</p>
 <p><code>$ nosetests</code></p>
