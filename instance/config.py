@@ -13,6 +13,7 @@ class Config(object):
 class TestingConfig(Config):
     """ Testing configurations. """
     TESTING = True
+    SECRET = 'hdjHD&*JDMDRS^&ghdD67dJHD%efgGHJDm877$$6&mbd#@bbdFGhj'
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/yummydb_test'
     DEBUG = True
 
