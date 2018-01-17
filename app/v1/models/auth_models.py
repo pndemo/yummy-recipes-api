@@ -44,7 +44,7 @@ class User(BaseMixin, TimestampMixin, db.Model):
                 'iat': datetime.utcnow(),
                 'sub': user_id
             }
-            return jwt.encode(payload, Config.SECRET, algorithm='HS256')
+            return jwt.encode(payload, 'hdjHD&*JDMDRS^&ghdD67dJHD%efgGHJDm877$$6&mbd#@bbdFGhj', algorithm='HS256')
         except Exception as error:
             return str(error)
 
@@ -54,7 +54,7 @@ class User(BaseMixin, TimestampMixin, db.Model):
         revoked_token = RevokedToken.query.filter_by(token=str(token)).first()
         if not revoked_token:
             try:
-                payload = jwt.decode(token, Config.SECRET, algorithms=['HS256'])
+                payload = jwt.decode(token, 'hdjHD&*JDMDRS^&ghdD67dJHD%efgGHJDm877$$6&mbd#@bbdFGhj', algorithms=['HS256'])
                 return payload['sub']
             except jwt.DecodeError:
                 return 'Sorry, this token could not be decoded.'

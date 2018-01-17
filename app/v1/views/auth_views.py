@@ -137,7 +137,7 @@ class LoginView(Resource):
                 if access_token:
                     response = jsonify({
                         'message': 'You are now logged in.',
-                        'access_token': access_token.decode()
+                        'access_token': access_token.decode('utf-8')
                         })
                     response.status_code = 200
             else:
