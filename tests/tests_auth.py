@@ -12,13 +12,11 @@ class AuthTests(unittest.TestCase):
         self.app = create_app(config_name="testing")
         self.client = self.app.test_client
         self.register_data = {'username': 'newuser',
-                              'email': 'example@domain.com',
+                              'email': 'ndemopaul@yahoo.com',
                               'password': 'Bootcamp17',
                               'confirm_password': 'Bootcamp17'
                              }
-        self.login_data = {'username': 'newuser',
-                           'password': 'Bootcamp17'
-                          }
+        self.login_data = {'username': 'newuser', 'password': 'Bootcamp17'}
         with self.app.app_context():
             db.create_all()
 
@@ -73,7 +71,6 @@ can only contain 5-80 alphanumeric and underscore characters.")
     def test_user_registration_existing_username(self):
         """Test API for user registration with existing email address (POST request)"""
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
         self.assertEqual(res.status_code, 400)
         result = json.loads(res.data.decode())
@@ -82,7 +79,6 @@ can only contain 5-80 alphanumeric and underscore characters.")
     def test_user_registration_existing_email(self):
         """Test API for user registration with existing email address (POST request)"""
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
         self.assertEqual(res.status_code, 400)
         result = json.loads(res.data.decode())
@@ -100,7 +96,6 @@ the one entered.")
     def test_user_login_registered(self):
         """Test API for registered user login (POST request)"""
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
         login_res = self.client().post('/api/v1/auth/login', data=self.login_data)
         self.assertEqual(login_res.status_code, 200)
         result = json.loads(login_res.data.decode())
@@ -110,7 +105,6 @@ the one entered.")
     def test_user_login_empty_fields(self):
         """Test API for user login with empty fields (POST request)"""
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
         self.login_data['username'] = ''
         self.login_data['password'] = ''
         res = self.client().post('/api/v1/auth/login', data=self.login_data)
@@ -124,108 +118,39 @@ the one entered.")
         res = self.client().post('/api/v1/auth/login', data=self.login_data)
         self.assertEqual(res.status_code, 401)
         result = json.loads(res.data.decode())
-        self.assertEqual(result['message'], "Sorry, your email/password is invalid.")
+        self.assertEqual(result['message'], "Sorry, your username/password is invalid.")
 
     def test_password_reset(self):
         """Test API for password reset (POST request)"""
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
-        login_res = self.client().post('/api/v1/auth/login', data=self.login_data)
-        self.assertEqual(login_res.status_code, 200)
-        result = json.loads(login_res.data.decode())
-        access_token = result['access_token']
-        data = {'current_password': 'Bootcamp17',
-                'new_password': 'Bootcamp18',
-                'confirm_new_password': 'Bootcamp18'
-               }
-        res = self.client().post('/api/v1/auth/reset_password', headers=dict(Authorization= \
-                "Bearer " + access_token), data=data)
+        data = {'email': 'ndemopaul@yahoo.com'}
+        res = self.client().post('/api/v1/auth/reset_password', data=data)
         self.assertEqual(res.status_code, 200)
         result = json.loads(res.data.decode())
-        self.assertEqual(result['message'], "Your password has been reset.")
+        self.assertIn("Your password has been reset", result['message'])
 
-    def test_password_reset_empty_fields(self):
-        """Test API for password reset with empty fields (POST request)"""
+    def test_password_reset_empty_field(self):
+        """Test API for password reset with empty field (POST request)"""
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
-        login_res = self.client().post('/api/v1/auth/login', data=self.login_data)
-        self.assertEqual(login_res.status_code, 200)
-        result = json.loads(login_res.data.decode())
-        access_token = result['access_token']
-        data = {'current_password': '',
-                'new_password': '',
-                'confirm_new_password': ''
-               }
-        res = self.client().post('/api/v1/auth/reset_password', headers=dict(Authorization= \
-                "Bearer " + access_token), data=data)
+        data = {'email': ''}
+        res = self.client().post('/api/v1/auth/reset_password', data=data)
         self.assertEqual(res.status_code, 400)
         result = json.loads(res.data.decode())
-        self.assertEqual(result['current_password_message'], "Please enter password.")
-        self.assertEqual(result['new_password_message'], "Please enter password.")
-        self.assertEqual(result['confirm_new_password_message'], "Please enter password.")
+        self.assertEqual(result['email_message'], "Please enter email address.")
 
-    def test_password_reset_wrong_current_password(self):
-        """Test API for password reset with wrong current password (POST request)"""
+    def test_password_reset_non_existent_email(self):
+        """Test API for password reset with non existent email address (POST request)"""
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
-        login_res = self.client().post('/api/v1/auth/login', data=self.login_data)
-        self.assertEqual(login_res.status_code, 200)
-        result = json.loads(login_res.data.decode())
-        access_token = result['access_token']
-        data = {'current_password': 'Bootcamp18',
-                'new_password': 'Bootcamp18',
-                'confirm_new_password': 'Bootcamp18'
-               }
-        res = self.client().post('/api/v1/auth/reset_password', headers=dict(Authorization= \
-                "Bearer " + access_token), data=data)
-        self.assertEqual(res.status_code, 401)
-        result = json.loads(res.data.decode())
-        self.assertEqual(result['message'], "The current password entered is incorrect.")
-
-    def test_password_reset_short_password(self):
-        """Test API for password reset with short password (POST request)"""
-        res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
-        login_res = self.client().post('/api/v1/auth/login', data=self.login_data)
-        self.assertEqual(login_res.status_code, 200)
-        result = json.loads(login_res.data.decode())
-        access_token = result['access_token']
-        data = {'current_password': 'Bootcamp17',
-                'new_password': 'Boot',
-                'confirm_new_password': 'Boot'
-               }
-        res = self.client().post('/api/v1/auth/reset_password', headers=dict(Authorization= \
-                "Bearer " + access_token), data=data)
+        data = {'email': 'ndemopaul1@yahoo.com'}
+        res = self.client().post('/api/v1/auth/reset_password', data=data)
         self.assertEqual(res.status_code, 400)
         result = json.loads(res.data.decode())
-        self.assertEqual(result['new_password_message'], "Password must be at least 8 characters.")
-        self.assertEqual(result['confirm_new_password_message'], "Password must be at least 8 characters.")
-
-    def test_password_reset_non_matching_passwords(self):
-        """Test API for password reset with non matching passwords (POST request)"""
-        res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
-        login_res = self.client().post('/api/v1/auth/login', data=self.login_data)
-        self.assertEqual(login_res.status_code, 200)
-        result = json.loads(login_res.data.decode())
-        access_token = result['access_token']
-        data = {'current_password': 'Bootcamp17',
-                'new_password': 'Bootcamp18',
-                'confirm_new_password': 'Bootcamp19'
-               }
-        res = self.client().post('/api/v1/auth/reset_password', headers=dict(Authorization= \
-                "Bearer " + access_token), data=data)
-        self.assertEqual(res.status_code, 400)
-        result = json.loads(res.data.decode())
-        self.assertEqual(result['confirm_new_password_message'], "This password does not match \
-the one entered.")
+        self.assertEqual(result['message'], "User with this email address does not exist.")
 
     def test_user_logout(self):
         """Test API for user logout (GET request)"""
         res = self.client().post('/api/v1/auth/register', data=self.register_data)
-        self.assertEqual(res.status_code, 201)
         login_res = self.client().post('/api/v1/auth/login', data=self.login_data)
-        self.assertEqual(login_res.status_code, 200)
         result = json.loads(login_res.data.decode())
         access_token = result['access_token']
         res = self.client().get('/api/v1/auth/logout', headers=dict(Authorization="Bearer " + \
