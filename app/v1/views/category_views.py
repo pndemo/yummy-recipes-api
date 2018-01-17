@@ -1,87 +1,163 @@
 """ Category view for creating, viewing, updating and deleting categories """
 
-from flask.views import MethodView
-
-from flask import request, jsonify, abort, make_response
-from app.v1.models.auth_models import User
+from flask import jsonify, request, url_for
+from flask_restful import Resource, reqparse
+from sqlalchemy import exc
 from app.v1.models.category_models import Category
+from app.v1.validators import data_validator
+from app.v1.validators.category_validators import validate_category_name
+from app.v1.utils.decorators import authenticate
+from app.v1.utils.paginator import get_paginated_results
 
 # pylint: disable=C0103
 # pylint: disable=W0703
 
-class CategoryView(MethodView):
-    """Allows for creation and listing of recipe categories."""
-    methods = ['GET', 'POST']
+class CategoryView(Resource):
+    """ Allows for creation and listing of recipe categories. """
 
-    def post(self):
-        """Process POST request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                category_name = str(request.data.get('category_name', ''))
-                if category_name:
-                    category = Category(category_name=category_name, user_id=user_id)
-                    category.save()
-                    response = jsonify({
-                        'id': category.id,
-                        'category_name': category.category_name,
-                        'user_id': category.user_id,
-                        'date_created': category.date_created,
-                        'date_modified': category.date_modified
-                    })
-                    return make_response(response), 201
-            else:
-                response = {'message': user_id}
-                return make_response(jsonify(response)), 401
+    method_decorators = [authenticate]
 
-    def get(self):
-        """Process GET request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if request.values.get('page'):
-            page = int(request.values.get('page'))
-        else:
-            page = 1
-        if request.values.get('limit'):
-            limit = int(request.values.get('limit'))
-        else:
-            limit = 20
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                categories = Category.query.filter_by(user_id=user_id).paginate(page, limit)
-                results = []
-                for category in categories.items:
-                    obj = {
-                        'id': category.id,
-                        'category_name': category.category_name,
-                        'user_id': category.user_id,
-                        'date_created': category.date_created,
-                        'date_modified': category.date_modified
-                    }
-                    results.append(obj)
-                return make_response(jsonify(results)), 200
-            else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+    parser = reqparse.RequestParser()
+    parser.add_argument('category_name', type=str, help='Recipes\'s category name')
 
-class CategorySpecificView(MethodView):
+    def post(self, access_token, user):
+        """
+        Process POST request
+        ---
+        tags:
+          - Category
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: body
+            name: body
+            required: true
+            description: Category's category name
+            type: string
+            schema:
+              properties:
+                category_name:
+                  type: string
+                  default: Breakfast
+        responses:
+          201:
+            description: A new category created successfully
+          400:
+            description: Data validation failed
+          500:
+            description: Database could not be accessed
+        """
+
+        args = self.parser.parse_args()
+
+        messages = {}
+        messages['category_name_message'] = validate_category_name(args.category_name, user)
+
+        if not data_validator(messages):
+            return jsonify(messages), 400
+
+        try:
+            category = Category(category_name=args.category_name, user_id=user.id)
+            category.save()
+            response = jsonify({
+                'id': category.id,
+                'category_name': category.category_name,
+                'user_id': category.user_id,
+                'date_created': category.date_created,
+                'date_modified': category.date_modified
+            })
+            response.status_code = 201
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
+
+    def get(self, access_token, user):
+        """
+        Process GET request
+        ---
+        tags:
+          - Category
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: query
+            name: start
+            description: id to start category results pagination
+          - in: query
+            name: limit
+            description: Number of categories to display per page
+        responses:
+          200:
+            description: Categories retrieved successfully
+          500:
+            description: Database could not be accessed
+        """
+
+        try:
+            categories = Category.query.filter_by(user_id=user.id).all()
+            paginated = get_paginated_results(request, categories, url_for('category_view'))
+            results = []
+            for category in paginated['results']:
+                obj = {
+                    'id': category.id,
+                    'category_name': category.category_name,
+                    'user_id': category.user_id,
+                    'date_created': category.date_created,
+                    'date_modified': category.date_modified
+                }
+                results.append(obj)
+            response = jsonify({
+                'results': results,
+                'previous_link': paginated['previous_link'],
+                'next_link': paginated['next_link']
+                })
+            response.status_code = 200
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
+
+class CategorySpecificView(Resource):
     """Allows for viewing, updating and and deletion of specific recipe category."""
-    methods = ['GET', 'PUT', 'DELETE']
 
-    def get(self, category_id):
-        """Process GET request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                category = Category.query.filter_by(id=category_id).first()
-                if not category:
-                    abort(404)
+    method_decorators = [authenticate]
+
+    parser = reqparse.RequestParser()
+    parser.add_argument('category_name', type=str, help='Recipes\'s category name')
+
+    def get(self, access_token, user, category_id):
+        """
+        Process GET request
+        ---
+        tags:
+          - Category
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: path
+            name: category_id
+            required: true
+            description: The id of category requested
+            type: int
+        responses:
+          200:
+            description: Category retrieved successfully
+          404:
+            description: Category with category id could not be found
+          500:
+            description: Database could not be accessed
+        """
+
+        try:
+            category = Category.query.filter_by(id=category_id, user_id=user.id).first()
+            if category:
                 response = jsonify({
                     'id': category.id,
                     'category_name': category.category_name,
@@ -89,24 +165,62 @@ class CategorySpecificView(MethodView):
                     'date_created': category.date_created,
                     'date_modified': category.date_modified
                 })
-                return make_response(response), 200
+                response.status_code = 200
             else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+                response = jsonify({'message': 'Category with category id could not be found.'})
+                response.status_code = 404
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
-    def put(self, category_id):
-        """Process PUT request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                category = Category.query.filter_by(id=category_id).first()
-                if not category:
-                    abort(404)
-                category_name = str(request.data.get('category_name', ''))
-                category.category_name = category_name
+    def put(self, access_token, user, category_id):
+        """
+        Process PUT request
+        ---
+        tags:
+          - Category
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: path
+            name: category_id
+            required: true
+            description: The id of category requested
+            type: int
+          - in: body
+            name: body
+            required: true
+            description: Category's category name
+            type: string
+            schema:
+              properties:
+                category_name:
+                  type: string
+                  default: Snacks
+        responses:
+          200:
+            description: Category updates successfully
+          404:
+            description: Category with category id could not be found
+          500:
+            description: Database could not be accessed
+        """
+
+        args = self.parser.parse_args()
+
+        messages = {}
+        messages['category_name_message'] = validate_category_name(args.category_name, user)
+
+        if not data_validator(messages):
+            return jsonify(messages), 400
+
+        try:
+            category = Category.query.filter_by(id=category_id, user_id=user.id).first()
+            if category:
+                category.category_name = args.category_name
                 category.save()
                 response = jsonify({
                     'id': category.id,
@@ -115,69 +229,116 @@ class CategorySpecificView(MethodView):
                     'date_created': category.date_created,
                     'date_modified': category.date_modified
                 })
-                return make_response(response), 200
+                response.status_code = 200
             else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+                response = jsonify({'message': 'Category with category id could not be found.'})
+                response.status_code = 404
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
-    def delete(self, category_id):
-        """Process DELETE request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                category = Category.query.filter_by(id=category_id).first()
-                if not category:
-                    abort(404)
+    def delete(self, access_token, user, category_id):
+        """
+        Process DELETE request
+        ---
+        tags:
+          - Category
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: path
+            name: category_id
+            required: true
+            description: The id of category requested
+            type: int
+        responses:
+          200:
+            description: Category deleted successfully
+          404:
+            description: Category with category id could not be found
+          500:
+            description: Database could not be accessed
+        """
+
+        try:
+            category = Category.query.filter_by(id=category_id, user_id=user.id).first()
+            if category:
                 category.delete()
-                return {"message": "category {} has been deleted". \
-                        format(category.category_name)}, 200
+                response = jsonify({'message': "Category {} has been deleted". \
+                        format(category.category_name)})
+                response.status_code = 200
             else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+                response = jsonify({'message': 'Category with category id could not be found.'})
+                response.status_code = 404
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
-class CategorySearchView(MethodView):
-    """Allows for searching of a category."""
-    methods = ['GET']
+class CategorySearchView(Resource):
+    """ Allows for searching of a category. """
 
-    def get(self):
-        """Process GET request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
+    method_decorators = [authenticate]
+
+    def get(self, access_token, user):
+        """
+        Process GET request
+        ---
+        tags:
+          - Category
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: query
+            name: q
+            description: Category name to search
+          - in: query
+            name: start
+            description: id to start category results pagination
+          - in: query
+            name: limit
+            description: Number of categories to display per page
+        responses:
+          200:
+            description: Categories retrieved successfully
+          500:
+            description: Database could not be accessed
+        """
+
         if request.values.get('q'):
             q = request.values.get('q')
         else:
             q = ''
-        if request.values.get('page'):
-            page = int(request.values.get('page'))
-        else:
-            page = 1
-        if request.values.get('limit'):
-            limit = int(request.values.get('limit'))
-        else:
-            limit = 20
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                categories = Category.query.filter(Category.category_name.like('%' + q + \
-                        '%')).filter_by(user_id=user_id).paginate(page, limit)
-                results = []
-                for category in categories.items:
-                    obj = {
-                        'id': category.id,
-                        'category_name': category.category_name,
-                        'user_id': category.user_id,
-                        'date_created': category.date_created,
-                        'date_modified': category.date_modified
-                    }
-                    results.append(obj)
-                return make_response(jsonify(results)), 200
-            else:
-                response = {'message': user_id}
-                return make_response(jsonify(response)), 401
+
+        try:
+            categories = Category.query.filter(Category.category_name.like('%' + q + \
+                    '%')).filter_by(user_id=user.id).all()
+            paginated = get_paginated_results(request, categories, url_for('category_search_view'))
+            results = []
+            for category in paginated['results']:
+                obj = {
+                    'id': category.id,
+                    'category_name': category.category_name,
+                    'user_id': category.user_id,
+                    'date_created': category.date_created,
+                    'date_modified': category.date_modified
+                }
+                results.append(obj)
+            response = jsonify({
+                'results': results,
+                'previous_link': paginated['previous_link'],
+                'next_link': paginated['next_link']
+                })
+            response.status_code = 200
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
 category_view = CategoryView.as_view('category_view')
 category_specific_view = CategorySpecificView.as_view('category_specific_view')

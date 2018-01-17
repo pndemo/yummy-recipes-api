@@ -1,5 +1,7 @@
 """ Authentication view for user registration, login, password reset and logout """
 
+import random
+import string
 from flask import jsonify
 from flask_restful import Resource, reqparse
 from sqlalchemy import exc
@@ -9,6 +11,7 @@ from app.v1.validators.auth_validators import validate_username, validate_user_e
         validate_password, validate_confirm_password
 from app.v1.views import auth_blueprint
 from app.v1.utils.decorators import authenticate
+from app.v1.utils.mailer import send_mail
 
 # pylint: disable=C0103
 # pylint: disable=W0703
@@ -61,8 +64,8 @@ class RegisterView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['username_message'] = validate_username(args.username, register=True)
-        messages['email_message'] = validate_user_email(args.email, register=True)
+        messages['username_message'] = validate_username(args.username.strip(), register=True)
+        messages['email_message'] = validate_user_email(args.email.strip(), register=True)
         messages['password_message'] = validate_password(args.password)
         messages['confirm_password_message'] = validate_confirm_password(args.confirm_password, \
                   args.password)
@@ -121,7 +124,7 @@ class LoginView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['username_message'] = validate_username(args.username)
+        messages['username_message'] = validate_username(args.username.strip())
         messages['password_message'] = validate_password(args.password)
 
         if not data_validator(messages):
@@ -138,7 +141,7 @@ class LoginView(Resource):
                         })
                     response.status_code = 200
             else:
-                response = jsonify({'message': 'Sorry, your email/password is invalid.'})
+                response = jsonify({'message': 'Sorry, your username/password is invalid.'})
                 response.status_code = 401
         except exc.SQLAlchemyError as error:
             response = jsonify({'message': str(error)})
@@ -148,70 +151,68 @@ class LoginView(Resource):
 class ResetPasswordView(Resource):
     """ Enables a user to reset password. """
 
-    method_decorators = [authenticate]
-
     parser = reqparse.RequestParser()
-    parser.add_argument('current_password', type=str, help='User\'s current password')
-    parser.add_argument('new_password', type=str, help='User\'s new password')
-    parser.add_argument('confirm_new_password', type=str, help='Confirm user\'s new password')
+    parser.add_argument('email', type=str, help='User\'s email address')
 
-    def post(self, access_token, user):
+    def post(self):
         """
         Process POST request
         ---
         tags:
           - Auth
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: body
             name: body
             required: true
-            description: Current and new user's passwords
+            description: User's email address
             type: string
             schema:
               properties:
-                current_password:
+                email:
                   type: string
-                  default: Bootcamp17
-                new_password:
-                  type: string
-                  default: Bootcamp18
-                confirm_new_password:
-                  type: string
-                  default: Bootcamp18
+                  default: ndemopaul1@gmail.com
         responses:
           200:
-            description: Existing user logged in to account successfully
+            description: Password reset successfully
           400:
             description: Data validation failed
-          401:
-            description: User authentication failed
+          404:
+            description: Email address could not be found
           500:
-            description: Database could not be accessed
+            description: Database could not be accessed or email could not be sent
         """
 
         args = self.parser.parse_args()
 
         messages = {}
-        messages['current_password_message'] = validate_password(args.current_password)
-        messages['new_password_message'] = validate_password(args.new_password)
-        messages['confirm_new_password_message'] = validate_confirm_password \
-                (args.confirm_new_password, args.new_password)
+        messages['email_message'] = validate_user_email(args.email.strip())
 
         if not data_validator(messages):
             return jsonify(messages), 400
 
-        if user.check_password(args.current_password):
-            user.password = user.hash_password(password=args.new_password)
-            user.save()
-            response = jsonify({'message': 'Your password has been reset.'})
-            response.status_code = 200
-        else:
-            response = jsonify({'message': 'The current password entered is incorrect.'})
-            response.status_code = 401
+        try:
+            user = User.query.filter_by(email=args.email).first()
+            if user:
+                chars = string.ascii_uppercase + string.ascii_lowercase + \
+                        string.digits
+                new_password = ''.join(random.choice(chars) for i in range(8))
+                user.password = user.hash_password(password=new_password)
+                user.save()
+                mail_content = 'Hi %s,\n\nYour password has been reset to %s. \
+Please change it after login.\n\nBest regards,\nYummy Recipes Inc.' \
+%(user.username, new_password)
+                if send_mail(user, "Yummy Recipes Password Reset", mail_content):
+                    response = jsonify({'message': 'Your password has been reset to %s.'%new_password})
+                    response.status_code = 200
+                else:
+                    response = jsonify({'message': 'Sorry, please try again.'})
+                    response.status_code = 500
+            else:
+                response = jsonify({'message': 'User with this email address does not exist.'})
+                response.status_code = 400
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
         return response
 
 class LogoutView(Resource):

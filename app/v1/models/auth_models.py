@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 import jwt
-from flask_bcrypt import Bcrypt
+from flask_bcrypt import generate_password_hash, check_password_hash
 from instance.config import Config
 from app import db
 from app.v1.utils.mixins import BaseMixin, TimestampMixin
@@ -23,18 +23,18 @@ class User(BaseMixin, TimestampMixin, db.Model):
     def __init__(self, username, email, password):
         self.username = username
         self.email = email
-        self.password = Bcrypt().generate_password_hash(password).decode()
+        self.password = generate_password_hash(password).decode('utf-8')
 
     def __repr__(self):
         return "<User: {}>".format(self.username)
 
     def check_password(self, password):
         """Check if password is valid"""
-        return Bcrypt().check_password_hash(self.password, password)
+        return check_password_hash(self.password, password)
 
     def hash_password(self, password):
         """Encrypt password before storage"""
-        return Bcrypt().generate_password_hash(password).decode()
+        return generate_password_hash(password).decode('utf-8')
 
     def encode_token(self, user_id):
         """Generate user token"""

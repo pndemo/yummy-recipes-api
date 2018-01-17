@@ -1,232 +1,463 @@
 """ Recipe view for creating, viewing, updating and deleting recipes """
 
-from flask.views import MethodView
-
-from flask import request, jsonify, make_response
-from app.v1.models.auth_models import User
+from flask import jsonify, request, url_for
+from flask_restful import Resource, reqparse
+from sqlalchemy import exc
 from app.v1.models.category_models import Category
 from app.v1.models.recipe_models import Recipe
+from app.v1.validators import data_validator
+from app.v1.validators.recipe_validators import validate_recipe_name, validate_ingredients, \
+        validate_directions
+from app.v1.utils.decorators import authenticate
+from app.v1.utils.paginator import get_paginated_results
 
 # pylint: disable=C0103
 # pylint: disable=W0703
 
-class RecipeView(MethodView):
+class RecipeView(Resource):
     """Allows for creation and listing of recipe categories."""
-    methods = ['POST', 'GET']
 
-    def post(self, category_id):
-        """Process POST request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                try:
-                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
-                    title = str(request.data.get('title', ''))
-                    ingredients = str(request.data.get('ingredients', ''))
-                    directions = str(request.data.get('directions', ''))
-                    if title and ingredients and directions:
-                        recipe = Recipe(title=title, ingredients=ingredients, directions= \
-                                directions, category_id=category.id)
-                        recipe.save()
-                        response = jsonify({
-                            'id': recipe.id,
-                            'title': recipe.title,
-                            'ingredients': recipe.ingredients,
-                            'directions': recipe.directions,
-                            'category_id': recipe.category_id,
-                            'date_created': recipe.date_created,
-                            'date_modified': recipe.date_modified
-                        })
-                        return make_response(response), 201
-                except Exception as exp:
-                    message = str(exp)
-                    response = {'message': message}
-                    return make_response(jsonify(response)), 404
+    method_decorators = [authenticate]
+
+    parser = reqparse.RequestParser()
+    parser.add_argument('recipe_name', type=str, help='Recipes\'s recipe name')
+    parser.add_argument('ingredients', type=str, help='Recipes\'s ingredients')
+    parser.add_argument('directions', type=str, help='Recipes\'s directions')
+
+    def post(self, access_token, user, category_id):
+        """
+        Process POST request
+        ---
+        tags:
+          - Recipe
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: path
+            name: category_id
+            required: true
+            description: The id of recipe category
+            type: int
+          - in: body
+            name: body
+            required: true
+            description: Recipe's name, ingredients, directions and category_id
+            type: string
+            schema:
+              properties:
+                recipe_name:
+                  type: string
+                  default: Espresso Esiri
+                ingredients:
+                  type: string
+                  default: 1) 1 tbsp plus 1 or 2 tsp (20-25 ml) Espresso, 2) 2 \
+tbsp (30 ml) Benedictine, 3) Approx. 3 tbsp (40 ml) fresh heavy cream, 4) Unsweetened \
+cocoa powder, 5) Ice cubes
+                directions:
+                  type: string
+                  default: 1) Prepare the Espresso in a small cup. 2) Fill the mixing \
+glass 3/4 full with ice cubes. Add the Benedictine and the Espresso. Cool, mixing the \
+ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice with a strainer. \
+4) Shake the cream, which should be very cold, in the mini shaker until it becomes quite thick. \
+5) Rest the cream on the surface of the cocktail, making it run down the back of the mixing spoon. \
+6) Garnish with a light dusting of cocoa, and serve.
+                category_id:
+                  type: int
+                  default: 1
+        responses:
+          201:
+            description: A new recipe created successfully
+          400:
+            description: Data validation failed
+          404:
+            description: Invalid recipe category id
+          500:
+            description: Database could not be accessed
+        """
+
+        args = self.parser.parse_args()
+
+        messages = {}
+        messages['recipe_name_message'] = validate_recipe_name(args.recipe_name, category_id)
+        messages['ingredients_message'] = validate_ingredients(args.ingredients)
+        messages['directions_message'] = validate_directions(args.directions)
+
+        if not data_validator(messages):
+            return jsonify(messages), 400
+
+        try:
+            category = Category.query.filter_by(id=category_id, user_id=user.id).first()
+            if category:
+                recipe = Recipe(recipe_name=args.recipe_name, ingredients=args.ingredients, \
+                        directions=args.directions, category_id=category_id)
+                recipe.save()
+                response = jsonify({
+                    'id': recipe.id,
+                    'recipe_name': recipe.recipe_name,
+                    'ingredients': recipe.ingredients,
+                    'directions': recipe.directions,
+                    'category_id': recipe.category_id,
+                    'date_created': recipe.date_created,
+                    'date_modified': recipe.date_modified
+                })
+                response.status_code = 201
             else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+                response = jsonify({'message': 'Sorry, recipe category could not be found.'})
+                response.status_code = 404
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
-    def get(self, category_id):
-        """Process GET request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if request.values.get('page'):
-            page = int(request.values.get('page'))
-        else:
-            page = 1
-        if request.values.get('limit'):
-            limit = int(request.values.get('limit'))
-        else:
-            limit = 20
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                try:
-                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
-                    recipes = Recipe.query.filter_by(category_id=category.id).paginate(page, limit)
-                    results = []
-                    for recipe in recipes.items:
-                        obj = {
-                            'id': recipe.id,
-                            'title': recipe.title,
-                            'ingredients': recipe.ingredients,
-                            'directions': recipe.directions,
-                            'category_id': recipe.category_id,
-                            'date_created': recipe.date_created,
-                            'date_modified': recipe.date_modified
-                        }
-                        results.append(obj)
-                    return make_response(jsonify(results)), 200
-                except Exception as exp:
-                    message = str(exp)
-                    response = {'message': message}
-                    return make_response(jsonify(response)), 404
+    def get(self, access_token, user, category_id):
+        """
+        Process GET request
+        ---
+        tags:
+          - Recipe
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: path
+            name: category_id
+            required: true
+            description: The id of recipe(s) category
+            type: int
+          - in: query
+            name: start
+            description: id to start category results pagination
+          - in: query
+            name: limit
+            description: Number of categories to display per page
+        responses:
+          200:
+            description: Categories retrieved successfully
+          404:
+            description: Invalid recipe category id
+          500:
+            description: Database could not be accessed
+        """
+
+        try:
+            category = Category.query.filter_by(id=category_id, user_id=user.id).first()
+            if category:
+                recipes = Recipe.query.filter_by(category_id=category.id).all()
+                paginated = get_paginated_results(request, recipes, url_for('category_view'))
+                results = []
+                for recipe in paginated['results']:
+                    obj = {
+                        'id': recipe.id,
+                        'recipe_name': recipe.recipe_name,
+                        'ingredients': recipe.ingredients,
+                        'directions': recipe.directions,
+                        'category_id': recipe.category_id,
+                        'date_created': recipe.date_created,
+                        'date_modified': recipe.date_modified
+                    }
+                    results.append(obj)
+                response = jsonify({
+                    'results': results,
+                    'previous_link': paginated['previous_link'],
+                    'next_link': paginated['next_link']
+                    })
+                response.status_code = 200
             else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+                response = jsonify({'message': 'Sorry, recipe category could not be found.'})
+                response.status_code = 404
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
-class RecipeSpecificView(MethodView):
+class RecipeSpecificView(Resource):
     """Allows for viewing, updating and and deletion of specific recipe category."""
-    methods = ['GET', 'PUT', 'DELETE']
 
-    def get(self, category_id, recipe_id):
-        """Process GET request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                try:
-                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
-                    recipe = Recipe.query.filter_by(id=recipe_id, category_id=category.id).first()
+    method_decorators = [authenticate]
+
+    parser = reqparse.RequestParser()
+    parser.add_argument('recipe_name', type=str, help='Recipes\'s recipe name')
+    parser.add_argument('ingredients', type=str, help='Recipes\'s ingredients')
+    parser.add_argument('directions', type=str, help='Recipes\'s directions')
+
+    def get(self, access_token, user, category_id, recipe_id):
+        """
+        Process GET request
+        ---
+        tags:
+          - Recipe
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: path
+            name: category_id
+            required: true
+            description: The id of recipe category
+            type: int
+          - in: path
+            name: recipe_id
+            required: true
+            description: The id of recipe requested
+            type: int
+        responses:
+          200:
+            description: Recipe retrieved successfully
+          404:
+            description: Category/recipe with id could not be found
+          500:
+            description: Database could not be accessed
+        """
+
+        try:
+            category = Category.query.filter_by(id=category_id, user_id=user.id).first()
+            if category:
+                recipe = Recipe.query.filter_by(id=recipe_id, category_id=category.id).first()
+                if recipe:
                     response = jsonify({
                         'id': recipe.id,
-                        'title': recipe.title,
+                        'recipe_name': recipe.recipe_name,
                         'ingredients': recipe.ingredients,
                         'directions': recipe.directions,
                         'category_id': recipe.category_id,
                         'date_created': recipe.date_created,
                         'date_modified': recipe.date_modified
                     })
-                    return make_response(response), 200
-                except Exception as exp:
-                    message = str(exp)
-                    response = {'message': message}
-                    return make_response(jsonify(response)), 404
+                    response.status_code = 200
+                else:
+                    response = jsonify({'message': 'Sorry, recipe could not be found.'})
+                    response.status_code = 404
             else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+                response = jsonify({'message': 'Sorry, recipe category could not be found.'})
+                response.status_code = 404
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
-    def put(self, category_id, recipe_id):
-        """Process PUT request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                try:
-                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
-                    recipe = Recipe.query.filter_by(id=recipe_id, category_id=category.id).first()
-                    title = str(request.data.get('title', ''))
-                    ingredients = str(request.data.get('ingredients', ''))
-                    directions = str(request.data.get('directions', ''))
-                    recipe.title = title
-                    recipe.ingredients = ingredients
-                    recipe.directions = directions
+    def put(self, access_token, user, category_id, recipe_id):
+        """
+        Process PUT request
+        ---
+        tags:
+          - Recipe
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: path
+            name: category_id
+            required: true
+            description: The id of recipe category
+            type: int
+          - in: path
+            name: recipe_id
+            required: true
+            description: The id of recipe requested
+            type: int
+          - in: body
+            name: body
+            required: true
+            description: Recipe's name, ingredients and directions
+            type: string
+            schema:
+              properties:
+                recipe_name:
+                  type: string
+                  default: Apple Cinnamon White Cake
+                ingredients:
+                  type: string
+                  default: 1) 1 teaspoon ground cinnamon 2) 2/3 cup white sugar \
+3) 1/2 cup butter, softened 4) 2 eggs 5) 1 1/2 teaspoons vanilla extract 6) 1 1/2 \
+cups all-purpose flour 7) 1 3/4 teaspoons baking powder 8) 1/2 cup milk 9) 1 apple, \
+peeled and chopped
+                directions:
+                  type: string
+                  default: 1) Prepare the Espresso in a small cup. 2) Fill the mixing \
+glass 3/4 full with ice cubes. Add the Benedictine and the Espresso. Cool, mixing the \
+ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice with a strainer. \
+4) Shake the cream, which should be very cold, in the mini shaker until it becomes quite thick. \
+5) Rest the cream on the surface of the cocktail, making it run down the back of the mixing spoon. \
+6) Garnish with a light dusting of cocoa, and serve.
+        responses:
+          200:
+            description: Recipe updated successfully
+          404:
+            description: Category/recipe with id could not be found
+          500:
+            description: Database could not be accessed
+        """
+        args = self.parser.parse_args()
+
+        messages = {}
+        messages['recipe_name_message'] = validate_recipe_name(args.recipe_name, category_id=category_id)
+        messages['ingredients_message'] = validate_ingredients(args.ingredients)
+        messages['directions_message'] = validate_directions(args.directions)
+
+        if not data_validator(messages):
+            return jsonify(messages), 400
+
+        try:
+            category = Category.query.filter_by(id=category_id, user_id=user.id).first()
+            if category:
+                recipe = Recipe.query.filter_by(id=recipe_id, category_id=category.id).first()
+                if recipe:
+                    recipe.recipe_name = args.recipe_name
+                    recipe.ingredients = args.ingredients
+                    recipe.directions = args.directions
                     recipe.save()
                     response = jsonify({
                         'id': recipe.id,
-                        'title': recipe.title,
+                        'recipe_name': recipe.recipe_name,
                         'ingredients': recipe.ingredients,
                         'directions': recipe.directions,
                         'category_id': recipe.category_id,
                         'date_created': recipe.date_created,
                         'date_modified': recipe.date_modified
                     })
-                    return make_response(response), 200
-                except Exception as exp:
-                    message = str(exp)
-                    response = {'message': message}
-                    return make_response(jsonify(response)), 404
+                    response.status_code = 200
+                else:
+                    response = jsonify({'message': 'Sorry, recipe could not be found.'})
+                    response.status_code = 404
             else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+                response = jsonify({'message': 'Sorry, recipe category could not be found.'})
+                response.status_code = 404
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
-    def delete(self, category_id, recipe_id):
-        """Process DELETE request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                try:
-                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
-                    recipe = Recipe.query.filter_by(id=recipe_id, category_id=category.id).first()
+    def delete(self, access_token, user, category_id, recipe_id):
+        """
+        Process DELETE request
+        ---
+        tags:
+          - Recipe
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: path
+            name: category_id
+            required: true
+            description: The id of recipe category
+            type: int
+          - in: path
+            name: recipe_id
+            required: true
+            description: The id of recipe requested
+            type: int
+        responses:
+          200:
+            description: Recipe updated successfully
+          404:
+            description: Category/recipe with id could not be found
+          500:
+            description: Database could not be accessed
+        """
+
+        try:
+            category = Category.query.filter_by(id=category_id, user_id=user.id).first()
+            if category:
+                recipe = Recipe.query.filter_by(id=recipe_id, category_id=category.id).first()
+                if recipe:
                     recipe.delete()
-                    return {"message": "recipe {} has been deleted".format(recipe.title)}, 200
-                except Exception as exp:
-                    message = str(exp)
-                    response = {'message': message}
-                    return make_response(jsonify(response)), 404
+                    response = jsonify({'message': "Recipe {} has been deleted.". \
+                            format(recipe.recipe_name)})
+                    response.status_code = 200
+                else:
+                    response = jsonify({'message': 'Sorry, recipe could not be found.'})
+                    response.status_code = 404
             else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+                response = jsonify({'message': 'Sorry, recipe category could not be found.'})
+                response.status_code = 404
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
-class RecipeSearchView(MethodView):
+class RecipeSearchView(Resource):
     """Allows for searching of a recipe."""
-    methods = ['GET']
 
-    def get(self, category_id):
-        """Process GET request"""
-        auth_header = request.headers.get('Authorization')
-        access_token = auth_header.split(" ")[1]
+    method_decorators = [authenticate]
+
+    def get(self, access_token, user, category_id):
+        """
+        Process GET request
+        ---
+        tags:
+          - Recipe
+        parameters:
+          - in: header
+            name: Authorization
+            required: true
+            type: string
+          - in: path
+            name: category_id
+            required: true
+            description: The id of recipe category
+            type: int
+          - in: query
+            name: q
+            description: Recipe name to search
+          - in: query
+            name: start
+            description: id to start category results pagination
+          - in: query
+            name: limit
+            description: Number of recipes to display per page
+        responses:
+          200:
+            description: Recipes retrieved successfully
+          404:
+            description: Category with category id could not be found
+          500:
+            description: Database could not be accessed
+        """
+
         if request.values.get('q'):
             q = request.values.get('q')
         else:
             q = ''
-        if request.values.get('page'):
-            page = int(request.values.get('page'))
-        else:
-            page = 1
-        if request.values.get('limit'):
-            limit = int(request.values.get('limit'))
-        else:
-            limit = 20
-        if access_token:
-            user_id = User.decode_token(access_token)
-            if not isinstance(user_id, str):
-                try:
-                    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
-                    recipes = Recipe.query.filter(Recipe.title.like('%' + q + '%')). \
-                            filter_by(category_id=category.id).paginate(page, limit)
-                    results = []
-                    for recipe in recipes.items:
-                        obj = {
-                            'id': recipe.id,
-                            'title': recipe.title,
-                            'ingredients': recipe.ingredients,
-                            'directions': recipe.directions,
-                            'category_id': recipe.category_id,
-                            'date_created': recipe.date_created,
-                            'date_modified': recipe.date_modified
-                        }
-                        results.append(obj)
-                    return make_response(jsonify(results)), 200
-                except Exception as exp:
-                    message = str(exp)
-                    response = {'message': message}
-                    return make_response(jsonify(response)), 404
+
+        try:
+            category = Category.query.filter_by(id=category_id, user_id=user.id).first()
+            if category:
+                recipes = Recipe.query.filter(Recipe.recipe_name.like('%' + q + \
+                        '%')).filter_by(category_id=category_id).all()
+                paginated = get_paginated_results(request, recipes, url_for('recipe_search_view', \
+                        category_id=category_id))
+                results = []
+                for recipe in paginated['results']:
+                    obj = {
+                        'id': recipe.id,
+                        'recipe_name': recipe.recipe_name,
+                        'ingredients': recipe.ingredients,
+                        'directions': recipe.directions,
+                        'category_id': recipe.category_id,
+                        'date_created': recipe.date_created,
+                        'date_modified': recipe.date_modified
+                    }
+                    results.append(obj)
+                response = jsonify({
+                    'results': results,
+                    'previous_link': paginated['previous_link'],
+                    'next_link': paginated['next_link']
+                    })
+                response.status_code = 200
             else:
-                message = user_id
-                response = {'message': message}
-                return make_response(jsonify(response)), 401
+                response = jsonify({'message': 'Sorry, recipe category could not be found.'})
+                response.status_code = 404
+        except exc.SQLAlchemyError as error:
+            response = jsonify({'message': str(error)})
+            response.status_code = 500
+        return response
 
 recipe_view = RecipeView.as_view('recipe_view')
 recipe_specific_view = RecipeSpecificView.as_view('recipe_specific_view')
