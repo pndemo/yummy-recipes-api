@@ -4,6 +4,8 @@ import unittest
 import json
 from app import create_app, db
 
+# pylint: disable=C0103
+
 class CategoryTests(unittest.TestCase):
     """ Tests for creating, viewing, updating and deleting categories """
 
@@ -11,6 +13,7 @@ class CategoryTests(unittest.TestCase):
         """Define test variables and initialize app"""
         self.app = create_app(config_name="testing")
         self.client = self.app.test_client
+        self.base_url = '/api/v1/category/'
         register_data = {'username': 'newuser',
                          'email': 'example@domain.com',
                          'password': 'Bootcamp17',
@@ -26,7 +29,7 @@ class CategoryTests(unittest.TestCase):
 
     def test_create_valid_category(self):
         """Test API for valid creation of category (POST request)"""
-        res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+        res = self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
         self.assertEqual(res.status_code, 201)
         self.assertIn('Breakfast', str(res.data))
@@ -34,7 +37,7 @@ class CategoryTests(unittest.TestCase):
     def test_create_empty_category_name(self):
         """Test API for unsuccessful category creation with empty category name (POST request)"""
         self.category['category_name'] = ''
-        res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+        res = self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
         self.assertEqual(res.status_code, 400)
         result = json.loads(res.data.decode())
@@ -43,7 +46,7 @@ class CategoryTests(unittest.TestCase):
     def test_create_invalid_category_name(self):
         """Test API for unsuccessful category creation with invalid category name (POST request)"""
         self.category['category_name'] = 'Break#@^&'
-        res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+        res = self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
         self.assertEqual(res.status_code, 400)
         result = json.loads(res.data.decode())
@@ -51,61 +54,121 @@ class CategoryTests(unittest.TestCase):
 
     def test_create_registered_category_name(self):
         """Test API for unsuccessful category creation with registered category name (POST request)"""
-        self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+        self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
-        res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+        res = self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
         self.assertEqual(res.status_code, 400)
         result = json.loads(res.data.decode())
         self.assertEqual(result['category_name_message'], "A category with this category name \
 is already available.")
 
-    def test_get_categories(self):
-        """Test API for retrieval of categories (GET request)"""
-        self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+    def test_get_categories_set_values(self):
+        """Test API for retrieval of categories with set page and limit values (GET request)"""
+        self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
-        result = self.client().get('/api/v1/category/?start=1&limit=10', headers= \
+        result = self.client().get(self.base_url + '?page=1&limit=10', headers= \
                 dict(Authorization="Bearer " + self.access_token))
         self.assertEqual(result.status_code, 200)
         self.assertIn('Breakfast', str(result.data))
 
-    def test_get_category_by_id(self):
-        """Test API for retrieval of specific category (GET request)"""
-        res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+    def test_get_categories_default_values(self):
+        """Test API for retrieval of categories with default page and limit values (GET request)"""
+        self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
+                self.access_token), data=self.category)
+        result = self.client().get(self.base_url, headers=dict(Authorization= \
+                "Bearer " + self.access_token))
+        self.assertEqual(result.status_code, 200)
+        self.assertIn('Breakfast', str(result.data))
+
+    def test_get_categories_invalid_values(self):
+        """Test API for retrieval of categories with invalid page and limit values (GET request)"""
+        self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
+                self.access_token), data=self.category)
+        res = self.client().get(self.base_url + '?page=ws&limit=10', headers= \
+                dict(Authorization="Bearer " + self.access_token))
+        self.assertEqual(res.status_code, 400)
+        result = json.loads(res.data.decode())
+        self.assertEqual(result['message'], "Please enter valid page and limit values.")
+
+    def test_get_category_by_valid_id(self):
+        """Test API for retrieval of specific category with valid category id (GET request)"""
+        res = self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
         results = json.loads(res.data.decode())
-        result = self.client().get('/api/v1/category/{}'.format(results['id']), \
+        result = self.client().get(self.base_url + '{}'.format(results['id']), \
                 headers=dict(Authorization="Bearer " + self.access_token))
         self.assertEqual(result.status_code, 200)
         self.assertIn('Breakfast', str(result.data))
 
-    def test_update_category(self):
-        """Test API for update of specific category (PUT request)"""
-        res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+    def test_get_category_by_invalid_id(self):
+        """Test API for retrieval of specific category with invalid category id (GET request)"""
+        res = self.client().get(self.base_url + '1', headers=dict(Authorization= \
+                "Bearer " + self.access_token))
+        self.assertEqual(res.status_code, 404)
+        result = json.loads(res.data.decode())
+        self.assertEqual(result['message'], "Category with category id could not be found.")
+
+    def test_update_valid_category_name(self):
+        """Test API for update of specific category with valid category name (PUT request)"""
+        res = self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
         results = json.loads(res.data.decode())
-        result = self.client().put('/api/v1/category/{}'.format(results['id']), headers= \
-                dict(Authorization="Bearer " + self.access_token), data={'category_name': 'Snacks'})
+        self.category['category_name'] = 'Snacks'
+        result = self.client().put(self.base_url + '{}'.format(results['id']), headers= \
+                dict(Authorization="Bearer " + self.access_token), data=self.category)
         self.assertEqual(result.status_code, 200)
         self.assertIn('Snacks', str(result.data))
 
-    def test_delete_category(self):
-        """Test API for deletion of specific category (DELETE request)"""
-        res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+    def test_update_registered_category_name(self):
+        """Test API for update of specific category with registered category name (PUT request)"""
+        self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
+                self.access_token), data=self.category)
+        self.category['category_name'] = 'Snacks'
+        res = self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
         results = json.loads(res.data.decode())
-        res = self.client().delete('/api/v1/category/{}'.format(results['id']), headers= \
+        self.category['category_name'] = 'Breakfast'
+        res = self.client().put(self.base_url + '{}'.format(results['id']), headers= \
+                dict(Authorization="Bearer " + self.access_token), data=self.category)
+        self.assertEqual(res.status_code, 400)
+        result = json.loads(res.data.decode())
+        self.assertEqual(result['category_name_message'], "A category with this category name \
+is already available.")
+
+    def test_update_category_by_invalid_id(self):
+        """Test API for update of specific category with invalid category id (GET request)"""
+        res = self.client().put(self.base_url + '1', headers=dict(Authorization= \
+                "Bearer " + self.access_token), data=self.category)
+        self.assertEqual(res.status_code, 404)
+        result = json.loads(res.data.decode())
+        self.assertEqual(result['message'], "Category with category id could not be found.")
+
+    def test_delete_category_valid_id(self):
+        """Test API for deletion of specific category with valid id (DELETE request)"""
+        res = self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
+                self.access_token), data=self.category)
+        results = json.loads(res.data.decode())
+        res = self.client().delete(self.base_url + '{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + self.access_token))
-        result = self.client().get('/api/v1/category/{}'.format(results['id']), headers= \
+        result = self.client().get(self.base_url + '{}'.format(results['id']), headers= \
                 dict(Authorization="Bearer " + self.access_token))
         self.assertEqual(result.status_code, 404)
 
+    def test_delete_category_by_invalid_id(self):
+        """Test API for delete of specific category with invalid id (GET request)"""
+        res = self.client().delete(self.base_url + '1', headers=dict(Authorization= \
+                "Bearer " + self.access_token))
+        self.assertEqual(res.status_code, 404)
+        result = json.loads(res.data.decode())
+        self.assertEqual(result['message'], "Category with category id could not be found.")
+
     def test_search_category(self):
         """Test API for category search (GET request)"""
-        res = self.client().post('/api/v1/category/', headers=dict(Authorization="Bearer " + \
+        res = self.client().post(self.base_url, headers=dict(Authorization="Bearer " + \
                 self.access_token), data=self.category)
         results = json.loads(res.data.decode())
-        res = self.client().get('/api/v1/category/search?q={}&start=1&limit=10'. \
+        res = self.client().get(self.base_url + 'search?q={}&page=1&limit=10'. \
                 format(results['category_name']), headers=dict(Authorization="Bearer " + \
                 self.access_token))
         self.assertEqual(res.status_code, 200)
