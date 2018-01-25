@@ -13,6 +13,7 @@ from app.v1.utils.paginator import get_paginated_results
 
 # pylint: disable=C0103
 # pylint: disable=W0703
+# pylint: disable=W0613
 
 class RecipeView(Resource):
     """Allows for creation and listing of recipe categories."""
@@ -30,11 +31,9 @@ class RecipeView(Resource):
         ---
         tags:
           - Recipe
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: path
             name: category_id
             required: true
@@ -80,7 +79,7 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
         args = self.parser.parse_args()
 
         messages = {}
-        messages['recipe_name_message'] = validate_recipe_name(args.recipe_name, category_id)
+        messages['recipe_name_message'] = validate_recipe_name(args.recipe_name.strip(), category_id)
         messages['ingredients_message'] = validate_ingredients(args.ingredients)
         messages['directions_message'] = validate_directions(args.directions)
 
@@ -117,11 +116,9 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
         ---
         tags:
           - Recipe
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: path
             name: category_id
             required: true
@@ -136,6 +133,8 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
         responses:
           200:
             description: Categories retrieved successfully
+          400:
+            description: Non-integer page and limit values submitted
           404:
             description: Invalid recipe category id
           500:
@@ -147,24 +146,28 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
             if category:
                 recipes = Recipe.query.filter_by(category_id=category.id).all()
                 paginated = get_paginated_results(request, recipes, url_for('category_view'))
-                results = []
-                for recipe in paginated['results']:
-                    obj = {
-                        'id': recipe.id,
-                        'recipe_name': recipe.recipe_name,
-                        'ingredients': recipe.ingredients,
-                        'directions': recipe.directions,
-                        'category_id': recipe.category_id,
-                        'date_created': recipe.date_created,
-                        'date_modified': recipe.date_modified
-                    }
-                    results.append(obj)
-                response = jsonify({
-                    'results': results,
-                    'previous_link': paginated['previous_link'],
-                    'next_link': paginated['next_link']
-                    })
-                response.status_code = 200
+                if paginated['is_good_query']:
+                    results = []
+                    for recipe in paginated['results']:
+                        obj = {
+                            'id': recipe.id,
+                            'recipe_name': recipe.recipe_name,
+                            'ingredients': recipe.ingredients,
+                            'directions': recipe.directions,
+                            'category_id': recipe.category_id,
+                            'date_created': recipe.date_created,
+                            'date_modified': recipe.date_modified
+                        }
+                        results.append(obj)
+                    response = jsonify({
+                        'results': results,
+                        'previous_link': paginated['previous_link'],
+                        'next_link': paginated['next_link']
+                        })
+                    response.status_code = 200
+                else:
+                    response = jsonify({'message': 'Please enter valid page and limit values.'})
+                    response.status_code = 400
             else:
                 response = jsonify({'message': 'Sorry, recipe category could not be found.'})
                 response.status_code = 404
@@ -189,11 +192,9 @@ class RecipeSpecificView(Resource):
         ---
         tags:
           - Recipe
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: path
             name: category_id
             required: true
@@ -245,11 +246,9 @@ class RecipeSpecificView(Resource):
         ---
         tags:
           - Recipe
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: path
             name: category_id
             required: true
@@ -295,7 +294,8 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
         args = self.parser.parse_args()
 
         messages = {}
-        messages['recipe_name_message'] = validate_recipe_name(args.recipe_name, category_id=category_id)
+        messages['recipe_name_message'] = validate_recipe_name(args.recipe_name.strip(), \
+                category_id=category_id)
         messages['ingredients_message'] = validate_ingredients(args.ingredients)
         messages['directions_message'] = validate_directions(args.directions)
 
@@ -338,11 +338,9 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
         ---
         tags:
           - Recipe
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: path
             name: category_id
             required: true
@@ -393,11 +391,9 @@ class RecipeSearchView(Resource):
         ---
         tags:
           - Recipe
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: path
             name: category_id
             required: true
@@ -415,6 +411,8 @@ class RecipeSearchView(Resource):
         responses:
           200:
             description: Recipes retrieved successfully
+          400:
+            description: Non-integer page and limit values submitted
           404:
             description: Category with category id could not be found
           500:
@@ -429,28 +427,32 @@ class RecipeSearchView(Resource):
         try:
             category = Category.query.filter_by(id=category_id, user_id=user.id).first()
             if category:
-                recipes = Recipe.query.filter(Recipe.recipe_name.like('%' + q + \
+                recipes = Recipe.query.filter(Recipe.recipe_name.ilike('%' + q + \
                         '%')).filter_by(category_id=category_id).all()
                 paginated = get_paginated_results(request, recipes, url_for('recipe_search_view', \
                         category_id=category_id))
-                results = []
-                for recipe in paginated['results']:
-                    obj = {
-                        'id': recipe.id,
-                        'recipe_name': recipe.recipe_name,
-                        'ingredients': recipe.ingredients,
-                        'directions': recipe.directions,
-                        'category_id': recipe.category_id,
-                        'date_created': recipe.date_created,
-                        'date_modified': recipe.date_modified
-                    }
-                    results.append(obj)
-                response = jsonify({
-                    'results': results,
-                    'previous_link': paginated['previous_link'],
-                    'next_link': paginated['next_link']
-                    })
-                response.status_code = 200
+                if paginated['is_good_query']:
+                    results = []
+                    for recipe in paginated['results']:
+                        obj = {
+                            'id': recipe.id,
+                            'recipe_name': recipe.recipe_name,
+                            'ingredients': recipe.ingredients,
+                            'directions': recipe.directions,
+                            'category_id': recipe.category_id,
+                            'date_created': recipe.date_created,
+                            'date_modified': recipe.date_modified
+                        }
+                        results.append(obj)
+                    response = jsonify({
+                        'results': results,
+                        'previous_link': paginated['previous_link'],
+                        'next_link': paginated['next_link']
+                        })
+                    response.status_code = 200
+                else:
+                    response = jsonify({'message': 'Please enter valid page and limit values.'})
+                    response.status_code = 400
             else:
                 response = jsonify({'message': 'Sorry, recipe category could not be found.'})
                 response.status_code = 404
