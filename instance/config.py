@@ -1,4 +1,4 @@
-""" Configuration specifications for testing, development staging and production environments """
+""" Configuration specifications for testing, development, staging and production environments """
 
 import os
 
@@ -9,13 +9,19 @@ class Config(object):
     SECRET = os.getenv('SECRET')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 465
+    MAIL_USE_TLS = False
+    MAIL_USE_SSL = True
+    MAIL_USERNAME = 'jumapaul02@gmail.com'
+    MAIL_PASSWORD = 'tickpaul'
 
 class TestingConfig(Config):
     """ Testing configurations. """
-    TESTING = True
-    SECRET = 'hdjHD&*JDMDRS^&ghdD67dJHD%efgGHJDm877$$6&mbd#@bbdFGhj'
-    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/yummydb_test'
     DEBUG = True
+    TESTING = True
+    SECRET = 'jhdsj%jkej$8jhjdhdjh^&kjdhdjhhdg#63KJhjejhe*hege'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/yummydb_test'
 
 class DevelopmentConfig(Config):
     """ Development configurations. """
@@ -27,7 +33,6 @@ class StagingConfig(Config):
 
 class ProductionConfig(Config):
     """ Production configurations. """
-    DEBUG = False
     TESTING = False
 
 # pylint: disable=C0103
