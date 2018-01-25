@@ -226,11 +226,8 @@ class LogoutView(Resource):
         ---
         tags:
           - Auth
-        parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
+        security:
+          - Bearer: []
         responses:
           200:
             description: User logged out successfully
