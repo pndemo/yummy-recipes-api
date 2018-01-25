@@ -11,6 +11,7 @@ from app.v1.utils.paginator import get_paginated_results
 
 # pylint: disable=C0103
 # pylint: disable=W0703
+# pylint: disable=W0613
 
 class CategoryView(Resource):
     """ Allows for creation and listing of recipe categories. """
@@ -26,11 +27,9 @@ class CategoryView(Resource):
         ---
         tags:
           - Category
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: body
             name: body
             required: true
@@ -53,7 +52,7 @@ class CategoryView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['category_name_message'] = validate_category_name(args.category_name, user)
+        messages['category_name_message'] = validate_category_name(args.category_name.strip(), user)
 
         if not data_validator(messages):
             return jsonify(messages), 400
@@ -80,20 +79,20 @@ class CategoryView(Resource):
         ---
         tags:
           - Category
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: query
-            name: start
-            description: id to start category results pagination
+            name: page
+            description: Page number to display
           - in: query
             name: limit
             description: Number of categories to display per page
         responses:
           200:
             description: Categories retrieved successfully
+          400:
+            description: Non-integer page and limit values submitted
           500:
             description: Database could not be accessed
         """
@@ -101,22 +100,26 @@ class CategoryView(Resource):
         try:
             categories = Category.query.filter_by(user_id=user.id).all()
             paginated = get_paginated_results(request, categories, url_for('category_view'))
-            results = []
-            for category in paginated['results']:
-                obj = {
-                    'id': category.id,
-                    'category_name': category.category_name,
-                    'user_id': category.user_id,
-                    'date_created': category.date_created,
-                    'date_modified': category.date_modified
-                }
-                results.append(obj)
-            response = jsonify({
-                'results': results,
-                'previous_link': paginated['previous_link'],
-                'next_link': paginated['next_link']
-                })
-            response.status_code = 200
+            if paginated['is_good_query']:
+                results = []
+                for category in paginated['results']:
+                    obj = {
+                        'id': category.id,
+                        'category_name': category.category_name,
+                        'user_id': category.user_id,
+                        'date_created': category.date_created,
+                        'date_modified': category.date_modified
+                    }
+                    results.append(obj)
+                response = jsonify({
+                    'results': results,
+                    'previous_link': paginated['previous_link'],
+                    'next_link': paginated['next_link']
+                    })
+                response.status_code = 200
+            else:
+                response = jsonify({'message': 'Please enter valid page and limit values.'})
+                response.status_code = 400
         except exc.SQLAlchemyError as error:
             response = jsonify({'message': str(error)})
             response.status_code = 500
@@ -136,11 +139,9 @@ class CategorySpecificView(Resource):
         ---
         tags:
           - Category
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: path
             name: category_id
             required: true
@@ -180,11 +181,9 @@ class CategorySpecificView(Resource):
         ---
         tags:
           - Category
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: path
             name: category_id
             required: true
@@ -212,7 +211,7 @@ class CategorySpecificView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['category_name_message'] = validate_category_name(args.category_name, user)
+        messages['category_name_message'] = validate_category_name(args.category_name.strip(), user)
 
         if not data_validator(messages):
             return jsonify(messages), 400
@@ -244,11 +243,9 @@ class CategorySpecificView(Resource):
         ---
         tags:
           - Category
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: path
             name: category_id
             required: true
@@ -289,11 +286,9 @@ class CategorySearchView(Resource):
         ---
         tags:
           - Category
+        security:
+          - Bearer: []
         parameters:
-          - in: header
-            name: Authorization
-            required: true
-            type: string
           - in: query
             name: q
             description: Category name to search
@@ -306,6 +301,8 @@ class CategorySearchView(Resource):
         responses:
           200:
             description: Categories retrieved successfully
+          400:
+            description: Non-integer page and limit values submitted
           500:
             description: Database could not be accessed
         """
@@ -316,25 +313,29 @@ class CategorySearchView(Resource):
             q = ''
 
         try:
-            categories = Category.query.filter(Category.category_name.like('%' + q + \
+            categories = Category.query.filter(Category.category_name.ilike('%' + q + \
                     '%')).filter_by(user_id=user.id).all()
             paginated = get_paginated_results(request, categories, url_for('category_search_view'))
-            results = []
-            for category in paginated['results']:
-                obj = {
-                    'id': category.id,
-                    'category_name': category.category_name,
-                    'user_id': category.user_id,
-                    'date_created': category.date_created,
-                    'date_modified': category.date_modified
-                }
-                results.append(obj)
-            response = jsonify({
-                'results': results,
-                'previous_link': paginated['previous_link'],
-                'next_link': paginated['next_link']
-                })
-            response.status_code = 200
+            if paginated['is_good_query']:
+                results = []
+                for category in paginated['results']:
+                    obj = {
+                        'id': category.id,
+                        'category_name': category.category_name,
+                        'user_id': category.user_id,
+                        'date_created': category.date_created,
+                        'date_modified': category.date_modified
+                    }
+                    results.append(obj)
+                response = jsonify({
+                    'results': results,
+                    'previous_link': paginated['previous_link'],
+                    'next_link': paginated['next_link']
+                    })
+                response.status_code = 200
+            else:
+                response = jsonify({'message': 'Please enter valid page and limit values.'})
+                response.status_code = 400
         except exc.SQLAlchemyError as error:
             response = jsonify({'message': str(error)})
             response.status_code = 500
