@@ -1,4 +1,4 @@
-""" Manage migrations """
+""" Management of application migrations """
 
 # pylint: disable=W0611
 # pylint: disable=C0103
