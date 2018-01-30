@@ -56,10 +56,10 @@ def validate_confirm_password(value, password):
     Returns 'Valid' if confirmation password provided by user is valid, otherwise an appropriate
     error message is returned
     """
-    message = validate_password(value)
-    if message == 'Valid':
-        if value != password:
-            message = 'This password does not match the one entered.'
-        else:
-            message = 'Valid'
+    if not value:
+        message = 'Please confirm password.'
+    elif value != password:
+        message = 'This password does not match the one entered.'
+    else:
+        message = 'Valid'
     return message
