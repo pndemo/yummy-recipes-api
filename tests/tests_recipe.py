@@ -56,18 +56,14 @@ the mixing spoon. 6) Garnish with a light dusting of cocoa, and serve.'
         result = json.loads(res.data.decode())
         self.assertEqual(result['message'], "Sorry, recipe category could not be found.")
 
-    def test_create_empty_fields(self):
-        """Test API for unsuccessful recipe creation with empty fields (POST request)"""
+    def test_create_empty_recipe_name(self):
+        """Test API for unsuccessful recipe creation with empty recipe name (POST request)"""
         self.recipe['recipe_name'] = ''
-        self.recipe['ingredients'] = ''
-        self.recipe['directions'] = ''
         res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         self.assertEqual(res.status_code, 400)
         result = json.loads(res.data.decode())
         self.assertEqual(result['recipe_name_message'], "Please enter recipe name.")
-        self.assertEqual(result['ingredients_message'], "Please enter ingredients.")
-        self.assertEqual(result['directions_message'], "Please enter directions.")
 
     def test_create_invalid_recipe_name(self):
         """Test for unsuccessful recipe creation with invalid recipe name (POST request)"""
@@ -89,12 +85,31 @@ the mixing spoon. 6) Garnish with a light dusting of cocoa, and serve.'
         self.assertEqual(result['recipe_name_message'], "A recipe with this recipe name \
 is already available.")
 
+    def test_create_empty_ingredients(self):
+        """Test API for unsuccessful recipe creation with empty ingredients (POST request)"""
+        self.recipe['ingredients'] = ''
+        res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
+                dict(Authorization="Bearer " + self.access_token), data=self.recipe)
+        self.assertEqual(res.status_code, 400)
+        result = json.loads(res.data.decode())
+        self.assertEqual(result['ingredients_message'], "Please enter ingredients.")
+
+    def test_create_empty_directions(self):
+        """Test API for unsuccessful recipe creation with empty directions (POST request)"""
+        self.recipe['directions'] = ''
+        res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
+                dict(Authorization="Bearer " + self.access_token), data=self.recipe)
+        self.assertEqual(res.status_code, 400)
+        result = json.loads(res.data.decode())
+        self.assertEqual(result['directions_message'], "Please enter directions.")
+
     def test_get_recipes_valid_category(self):
         """Test API for retrieval of recipes with valid category  (GET request)"""
         self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
-        result = self.client().get(self.base_url + '{}/?start=1&limit=10'.format(self.category_id), \
-                headers=dict(Authorization="Bearer " + self.access_token))
+        result = self.client().get(self.base_url + '{}/?page=1&limit=10'. \
+                format(self.category_id), headers=dict(Authorization="Bearer " + \
+                self.access_token))
         self.assertEqual(result.status_code, 200)
         self.assertIn('Espresso Esiri', str(result.data))
 
@@ -108,17 +123,18 @@ is already available.")
 
     def test_get_recipe_by_id_valid(self):
         """Test API for retrieval of specific valid recipe (GET request)"""
-        res = self.client().post('/api/v1/recipe/{}/'.format(self.category_id), headers= \
+        res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         results = json.loads(res.data.decode())
-        result = self.client().get('/api/v1/recipe/{}/{}'.format(self.category_id, results['id']), \
-                headers=dict(Authorization="Bearer " + self.access_token))
+        result = self.client().get(self.base_url + '{}/{}'.format(self.category_id, \
+                results['id']), headers=dict(Authorization="Bearer " + \
+                self.access_token))
         self.assertEqual(result.status_code, 200)
         self.assertIn('Espresso Esiri', str(result.data))
 
     def test_get_recipe_by_id_invalid(self):
         """Test API for retrieval of specific invalid recipe (GET request)"""
-        res = self.client().get('/api/v1/recipe/{}/2'.format(self.category_id), \
+        res = self.client().get(self.base_url + '{}/2'.format(self.category_id), \
                 headers=dict(Authorization="Bearer " + self.access_token))
         self.assertEqual(res.status_code, 404)
         result = json.loads(res.data.decode())
@@ -126,22 +142,23 @@ is already available.")
 
     def test_update_recipe_valid_data(self):
         """Test API for update of specific recipe with valid data (PUT request)"""
-        res = self.client().post('/api/v1/recipe/{}/'.format(self.category_id), headers= \
+        res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         results = json.loads(res.data.decode())
         self.recipe['recipe_name'] = 'Apple Cinnamon White Cake'
         self.recipe['ingredients'] = '1) 1 teaspoon ground cinnamon 2) 2/3 cup white sugar \
 3) 1/2 cup butter, softened 4) 2 eggs 5) 1 1/2 teaspoons vanilla extract 6) 1 1/2 cups all-purpose \
 flour 7) 1 3/4 teaspoons baking powder 8) 1/2 cup milk 9) 1 apple, peeled and chopped'
-        result = self.client().put('/api/v1/recipe/{}/{}'.format(self.category_id, results['id']), \
-                headers=dict(Authorization="Bearer " + self.access_token), data=self.recipe)
+        result = self.client().put(self.base_url + '{}/{}'.format(self.category_id, \
+                results['id']), headers=dict(Authorization="Bearer " + self.access_token), \
+                data=self.recipe)
         self.assertEqual(result.status_code, 200)
         self.assertIn('Apple Cinnamon White Cake', str(result.data))
 
     def test_update_recipe_invalid_id(self):
         """Test API for update of specific recipe with invalid id (PUT request)"""
         self.recipe['recipe_name'] = 'Apple Cinnamon White Cake'
-        res = self.client().put('/api/v1/recipe/{}/2'.format(self.category_id), \
+        res = self.client().put(self.base_url + '{}/2'.format(self.category_id), \
                 headers=dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         self.assertEqual(res.status_code, 404)
         result = json.loads(res.data.decode())
@@ -149,11 +166,11 @@ flour 7) 1 3/4 teaspoons baking powder 8) 1/2 cup milk 9) 1 apple, peeled and ch
 
     def test_update_recipe_invalid_category_id(self):
         """Test API for update of specific recipe with invalid category id (PUT request)"""
-        res = self.client().post('/api/v1/recipe/{}/'.format(self.category_id), headers= \
+        res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         self.recipe['recipe_name'] = 'Apple Cinnamon White Cake'
         results = json.loads(res.data.decode())
-        res = self.client().put('/api/v1/recipe/2/{}'.format(results['id']), \
+        res = self.client().put(self.base_url + '2/{}'.format(results['id']), \
                 headers=dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         self.assertEqual(res.status_code, 404)
         result = json.loads(res.data.decode())
@@ -161,14 +178,14 @@ flour 7) 1 3/4 teaspoons baking powder 8) 1/2 cup milk 9) 1 apple, peeled and ch
 
     def test_update_recipe_registered_recipe_name(self):
         """Test API for update of specific recipe (PUT request)"""
-        self.client().post('/api/v1/recipe/{}/'.format(self.category_id), headers= \
+        self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         self.recipe['recipe_name'] = 'Apple Cinnamon White Cake'
-        res = self.client().post('/api/v1/recipe/{}/'.format(self.category_id), headers= \
+        res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         self.recipe['recipe_name'] = 'Espresso Esiri'
         results = json.loads(res.data.decode())
-        res = self.client().put('/api/v1/recipe/{}/{}'.format(self.category_id, results['id']), \
+        res = self.client().put(self.base_url + '{}/{}'.format(self.category_id, results['id']), \
                 headers=dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         self.assertEqual(res.status_code, 400)
         result = json.loads(res.data.decode())
@@ -177,18 +194,18 @@ is already available.")
 
     def test_delete_recipe_valid_id(self):
         """Test API for deletion of specific recipe with valid id (DELETE request)"""
-        res = self.client().post('/api/v1/recipe/{}/'.format(self.category_id), headers= \
+        res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         results = json.loads(res.data.decode())
-        res = self.client().delete('/api/v1/recipe/{}/{}'.format(self.category_id, results['id']), \
-                headers=dict(Authorization="Bearer " + self.access_token))
-        result = self.client().get('/api/v1/recipe/{}/{}'.format(self.category_id, results['id']), \
-                headers=dict(Authorization="Bearer " + self.access_token))
+        res = self.client().delete(self.base_url + '{}/{}'.format(self.category_id, \
+                results['id']), headers=dict(Authorization="Bearer " + self.access_token))
+        result = self.client().get(self.base_url + '{}/{}'.format(self.category_id, \
+                results['id']), headers=dict(Authorization="Bearer " + self.access_token))
         self.assertEqual(result.status_code, 404)
 
     def test_delete_recipe_invalid_id(self):
         """Test API for deletion of specific recipe with invalid id (DELETE request)"""
-        res = self.client().delete('/api/v1/recipe/{}/2'.format(self.category_id), \
+        res = self.client().delete(self.base_url + '{}/2'.format(self.category_id), \
                 headers=dict(Authorization="Bearer " + self.access_token))
         self.assertEqual(res.status_code, 404)
         result = json.loads(res.data.decode())
@@ -196,10 +213,10 @@ is already available.")
 
     def test_delete_recipe_invalid_category_id(self):
         """Test API for deletion of specific recipe with invalid category id (DELETE request)"""
-        res = self.client().post('/api/v1/recipe/{}/'.format(self.category_id), headers= \
+        res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         results = json.loads(res.data.decode())
-        res = self.client().delete('/api/v1/recipe/2/{}'.format(results['id']), \
+        res = self.client().delete(self.base_url + '2/{}'.format(results['id']), \
                 headers=dict(Authorization="Bearer " + self.access_token))
         self.assertEqual(res.status_code, 404)
         result = json.loads(res.data.decode())
@@ -207,10 +224,10 @@ is already available.")
 
     def test_search_recipe(self):
         """Test API for recipe search (GET request)"""
-        res = self.client().post('/api/v1/recipe/{}/'.format(self.category_id), headers= \
+        res = self.client().post(self.base_url + '{}/'.format(self.category_id), headers= \
                 dict(Authorization="Bearer " + self.access_token), data=self.recipe)
         results = json.loads(res.data.decode())
-        res = self.client().get('/api/v1/recipe/{}/search?q={}&start=1&limit=10'. \
+        res = self.client().get(self.base_url + '{}/search?q={}&page=1&limit=10'. \
                 format(self.category_id, results['recipe_name']), headers=dict(Authorization= \
                 "Bearer " + self.access_token))
         self.assertEqual(res.status_code, 200)

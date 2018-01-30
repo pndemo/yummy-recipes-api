@@ -1,7 +1,6 @@
 """ Input data validation for registration, login and password_reset views """
 
 import re
-from validate_email import validate_email
 from app.v1.models.auth_models import User
 
 def validate_username(value, register=False):
@@ -27,9 +26,10 @@ def validate_user_email(value, register=False):
     Returns 'Valid' if the email address provided by user is valid, otherwise an appropriate error
     message is returned.
     """
+    regexp = re.compile(r"\"?([-a-zA-Z0-9.`?{}]+@\w+\.\w+)\"?")
     if not value:
         message = 'Please enter email address.'
-    elif not validate_email(value):
+    elif not regexp.search(value):
         message = 'Please enter a valid email address.'
     else:
         if register and (User.query.filter_by(email=value).first()):
