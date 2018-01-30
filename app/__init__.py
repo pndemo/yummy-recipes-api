@@ -32,7 +32,6 @@ def create_app(config_name):
                 "url": "https://github.com/pndemo/yummy-recipes-api",
             }
         },
-        #"host": "yummy-recipes-api.herokuapp.com",
         "schemes": ["http", "https"],
         'securityDefinitions': {
             "Bearer": {
