@@ -9,12 +9,12 @@ class Config(object):
     SECRET = os.getenv('SECRET')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = 465
     MAIL_USE_TLS = False
     MAIL_USE_SSL = True
-    MAIL_USERNAME = 'jumapaul02@gmail.com'
-    MAIL_PASSWORD = 'tickpaul'
+    MAIL_USERNAME = os.getenv('HOST_USERNAME')
+    MAIL_PASSWORD = os.getenv('HOST_PASSWORD')
 
 class TestingConfig(Config):
     """ Testing configurations. """
