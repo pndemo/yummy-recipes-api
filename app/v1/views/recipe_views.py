@@ -125,11 +125,11 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
             description: The id of recipe(s) category
             type: int
           - in: query
-            name: start
-            description: id to start category results pagination
+            name: page
+            description: Page number to display
           - in: query
             name: limit
-            description: Number of categories to display per page
+            description: Number of recipes to display per page
         responses:
           200:
             description: Categories retrieved successfully

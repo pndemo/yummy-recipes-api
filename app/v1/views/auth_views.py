@@ -175,9 +175,7 @@ class ResetPasswordView(Resource):
           200:
             description: Password reset successfully
           400:
-            description: Data validation failed
-          404:
-            description: Email address could not be found
+            description: Email validation failed or email address could not be found
           500:
             description: Database could not be accessed or email could not be sent
         """
@@ -202,7 +200,7 @@ class ResetPasswordView(Resource):
 Please change it after login.\n\nBest regards,\nYummy Recipes Inc.' \
 %(user.username, new_password)
                 if send_mail(user, "Yummy Recipes Password Reset", mail_content):
-                    response = jsonify({'message': 'Your password has been reset to %s.'%new_password})
+                    response = jsonify({'message': 'Your password has been reset.'})
                     response.status_code = 200
                 else:
                     response = jsonify({'message': 'Sorry, please try again.'})

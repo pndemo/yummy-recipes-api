@@ -293,8 +293,8 @@ class CategorySearchView(Resource):
             name: q
             description: Category name to search
           - in: query
-            name: start
-            description: id to start category results pagination
+            name: page
+            description: Page number to display
           - in: query
             name: limit
             description: Number of categories to display per page
