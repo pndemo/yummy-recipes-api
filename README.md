@@ -3,10 +3,10 @@
 <img class="notice-badge" src="https://api.codacy.com/project/badge/Grade/1512eaed87c44b8794ca3aae2154c76b" alt="Badge"/>
 </a>
 <a href="https://travis-ci.org/pndemo/yummy-recipes-api">
-<img class="notice-badge" src="https://travis-ci.org/pndemo/yummy-recipes-api.svg?branch=develop" alt="Badge"/>
+<img class="notice-badge" src="https://travis-ci.org/pndemo/yummy-recipes-api.svg?branch=master" alt="Badge"/>
 </a>
 <a href="https://coveralls.io/github/pndemo/yummy-recipes-api">
-<img class="notice-badge" src="https://coveralls.io/repos/github/pndemo/yummy-recipes-api/badge.svg?branch=develop" alt="Badge"/>
+<img class="notice-badge" src="https://coveralls.io/repos/github/pndemo/yummy-recipes-api/badge.svg?branch=master" alt="Badge"/>
 </a>
 <a href="https://www.python.org/dev/peps/pep-0008/">
 <img class="notice-badge" src="https://img.shields.io/badge/code%20style-pep8-orange.svg" alt="Badge"/>
