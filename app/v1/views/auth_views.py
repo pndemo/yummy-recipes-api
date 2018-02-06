@@ -79,8 +79,7 @@ class RegisterView(Resource):
             response = jsonify({'message': 'Your account has been created.'})
             response.status_code = 201
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 class LoginView(Resource):
@@ -144,8 +143,7 @@ class LoginView(Resource):
                 response = jsonify({'message': 'Sorry, your username/password is invalid.'})
                 response.status_code = 401
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 class ResetPasswordView(Resource):
@@ -199,18 +197,14 @@ class ResetPasswordView(Resource):
                 mail_content = 'Hi %s,\n\nYour password has been reset to %s. \
 Please change it after login.\n\nBest regards,\nYummy Recipes Inc.' \
 %(user.username, new_password)
-                if send_mail(user, "Yummy Recipes Password Reset", mail_content):
-                    response = jsonify({'message': 'Your password has been reset.'})
-                    response.status_code = 200
-                else:
-                    response = jsonify({'message': 'Sorry, please try again.'})
-                    response.status_code = 500
+                send_mail(user, "Yummy Recipes Password Reset", mail_content)
+                response = jsonify({'message': 'Your password has been reset.'})
+                response.status_code = 200
             else:
                 response = jsonify({'message': 'User with this email address does not exist.'})
                 response.status_code = 400
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 class LogoutView(Resource):
@@ -241,8 +235,7 @@ class LogoutView(Resource):
             response = jsonify({'message': 'Your have been logged out.'})
             response.status_code = 200
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 register_view = RegisterView.as_view('register_view')

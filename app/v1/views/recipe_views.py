@@ -106,8 +106,7 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
                 response = jsonify({'message': 'Sorry, recipe category could not be found.'})
                 response.status_code = 404
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
     def get(self, access_token, user, category_id):
@@ -172,8 +171,7 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
                 response = jsonify({'message': 'Sorry, recipe category could not be found.'})
                 response.status_code = 404
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 class RecipeSpecificView(Resource):
@@ -236,8 +234,7 @@ class RecipeSpecificView(Resource):
                 response = jsonify({'message': 'Sorry, recipe category could not be found.'})
                 response.status_code = 404
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
     def put(self, access_token, user, category_id, recipe_id):
@@ -328,8 +325,7 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
                 response = jsonify({'message': 'Sorry, recipe category could not be found.'})
                 response.status_code = 404
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
     def delete(self, access_token, user, category_id, recipe_id):
@@ -376,8 +372,7 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
                 response = jsonify({'message': 'Sorry, recipe category could not be found.'})
                 response.status_code = 404
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 class RecipeSearchView(Resource):
@@ -457,8 +452,7 @@ class RecipeSearchView(Resource):
                 response = jsonify({'message': 'Sorry, recipe category could not be found.'})
                 response.status_code = 404
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 recipe_view = RecipeView.as_view('recipe_view')

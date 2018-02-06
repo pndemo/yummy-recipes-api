@@ -52,7 +52,7 @@ class CategoryView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['category_name_message'] = validate_category_name(args.category_name.strip(), user)
+        messages['category_name_message'] = validate_category_name(args.category_name.strip(), user.id)
 
         if not data_validator(messages):
             return jsonify(messages), 400
@@ -69,8 +69,7 @@ class CategoryView(Resource):
             })
             response.status_code = 201
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
     def get(self, access_token, user):
@@ -121,8 +120,7 @@ class CategoryView(Resource):
                 response = jsonify({'message': 'Please enter valid page and limit values.'})
                 response.status_code = 400
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 class CategorySpecificView(Resource):
@@ -171,8 +169,7 @@ class CategorySpecificView(Resource):
                 response = jsonify({'message': 'Category with category id could not be found.'})
                 response.status_code = 404
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
     def put(self, access_token, user, category_id):
@@ -211,7 +208,7 @@ class CategorySpecificView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['category_name_message'] = validate_category_name(args.category_name.strip(), user)
+        messages['category_name_message'] = validate_category_name(args.category_name.strip(), user.id)
 
         if not data_validator(messages):
             return jsonify(messages), 400
@@ -233,8 +230,7 @@ class CategorySpecificView(Resource):
                 response = jsonify({'message': 'Category with category id could not be found.'})
                 response.status_code = 404
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
     def delete(self, access_token, user, category_id):
@@ -271,8 +267,7 @@ class CategorySpecificView(Resource):
                 response = jsonify({'message': 'Category with category id could not be found.'})
                 response.status_code = 404
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 class CategorySearchView(Resource):
@@ -337,8 +332,7 @@ class CategorySearchView(Resource):
                 response = jsonify({'message': 'Please enter valid page and limit values.'})
                 response.status_code = 400
         except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
+            return jsonify({'message': str(error)}), 500
         return response
 
 category_view = CategoryView.as_view('category_view')
