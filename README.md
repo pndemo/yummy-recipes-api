@@ -31,6 +31,8 @@ This app enables you to access Yummy Recipes resources, a platform for users to 
   <p><code>$ source venv/bin/activate</code></p>
   <li>Install application requirements in virtual environment</li>
   <p><code>$ pip install -r requirements.txt</code></p>
+  <li>Create main and testing databases</li>
+  <p><code>$ python manage.py create</code></p>
   <li>Run the application</li>
   <p><code>$ export FLASK_APP=run.py</code></p>
   <p><code>$ flask run</code></p>
@@ -42,7 +44,7 @@ Endpoint | Functionality| Access
 ------------ | ------------- | ------------- 
 GET/POST /api/v1/auth/register | Create a new user account | PUBLIC
 GET/POST /api/v1/auth/login | Login registered user | PUBLIC
-GET/POST /api/v1/auth/reset_password | Change user's password | PRIVATE
+GET/POST /api/v1/auth/reset_password | Change user's password | PUBLIC
 GET/POST /api/v1/auth/logout | Logout logged in user | PRIVATE
 
 2) Category module
@@ -72,6 +74,6 @@ GET /api/v1/recipe/<int:category_id>/search | Search for recipe given category_i
 <p><a href="https://yummy-recipes-apis.herokuapp.com/">https://yummy-recipes-apis.herokuapp.com/</p>
 <h2>Testing</h2>
 <p>Testing has been implemented using the unit testing framework of the Python language. To run tests, use the following command:</p>
-<p><code>$ nosetests</code></p>
+<p><code>$ py.test --cov=app tests/</code></p>
 <h2>Licensing</h2>
 <p>This app is licensed under the MIT license.</p>
