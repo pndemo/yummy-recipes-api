@@ -55,7 +55,6 @@ coverage.xml
 local_settings.py
 
 # Flask stuff:
-instance/
 .webassets-cache
 
 # Scrapy stuff:
@@ -99,3 +98,7 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+.vscode/
+.DS_Store
+.pytest_cache/
