@@ -2,7 +2,6 @@
 
 from functools import wraps
 from flask import request, jsonify
-from sqlalchemy import exc
 from app.v1.models.auth_models import User
 
 def authenticate(func):
@@ -24,8 +23,5 @@ def authenticate(func):
         except IndexError:
             response = jsonify({'message': 'Sorry, user could not be authenticated.'})
             response.status_code = 401
-        except exc.SQLAlchemyError as error:
-            response = jsonify({'message': str(error)})
-            response.status_code = 500
         return response
     return wrapper
