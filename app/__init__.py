@@ -1,6 +1,6 @@
 """ Initial application specifications """
 
-from flask import Flask
+from flask import Flask, redirect
 from flask_sqlalchemy import SQLAlchemy
 from instance.config import app_config
 from flasgger import Swagger
@@ -15,8 +15,9 @@ def create_app(config_name):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(app_config[config_name])
 
-    template = {
+    app.config['SWAGGER'] = {
         "swagger": "2.0",
+        "title": "Yummy Recipes API",
         "info": {
             "title": "Yummy Recipes API",
             "description": "This app enables you to access Yummy Recipes resources, a platform \
@@ -42,15 +43,20 @@ def create_app(config_name):
         }
     }
 
-    Swagger(app, template=template)
+    Swagger(app)
 
     db.init_app(app)
+
+    def index():
+        """ Yummy Recipes API home page """
+        return redirect('/apidocs')
 
     from app.v1.views import auth_blueprint
     app.register_blueprint(auth_blueprint)
 
     from app.v1.views.category_views import category_view, category_specific_view, \
             category_search_view
+    app.add_url_rule('/', view_func=index)
     app.add_url_rule('/api/v1/category/', view_func=category_view)
     app.add_url_rule('/api/v1/category/<int:category_id>', view_func=category_specific_view)
     app.add_url_rule('/api/v1/category/search', view_func=category_search_view)
