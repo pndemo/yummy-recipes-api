@@ -12,7 +12,7 @@ def get_paginated_results(request, results, url):
         if request.values.get('limit'):
             limit = int(request.values.get('limit'))
         else:
-            limit = 10
+            limit = 6
 
         count = len(results)
         start = page * limit - limit + 1
@@ -26,11 +26,11 @@ def get_paginated_results(request, results, url):
             if page == 1:
                 paginated['previous_link'] = ''
             else:
-                paginated['previous_link'] = url + '?page=%d&limit=%d' % (page - 1, limit)
+                paginated['previous_link'] = url + 'page=%d&limit=%d' % (page - 1, limit)
             if start + limit > count:
                 paginated['next_link'] = ''
             else:
-                paginated['next_link'] = url + '?page=%d&limit=%d' % (page + 1, limit)
+                paginated['next_link'] = url + 'page=%d&limit=%d' % (page + 1, limit)
         paginated['results'] = results[(start - 1):(start - 1 + limit)]
     except ValueError:
         paginated['is_good_query'] = False
