@@ -207,6 +207,63 @@ Please change it after login.\n\nBest regards,\nYummy Recipes Inc.' \
             return jsonify({'message': str(error)}), 500
         return response
 
+class ChangePasswordView(Resource):
+    """ Enables a user to change password. """
+
+    parser = reqparse.RequestParser()
+    parser.add_argument('new_password', type=str, help='New user\'s password')
+    parser.add_argument('confirm_new_password', type=str, help='Confirm new user\'s password')
+
+    method_decorators = [authenticate]
+
+    def post(self, access_token, user):
+        """
+        Process POST request
+        ---
+        tags:
+          - Auth
+        parameters:
+          - in: body
+            name: body
+            required: true
+            description: User's new password
+            type: string
+            schema:
+              properties:
+                new_password:
+                  type: string
+                  default: Bootcamp17
+                confirm_new_password:
+                  type: string
+                  default: Bootcamp17
+        responses:
+          200:
+            description: Password changed successfully
+          400:
+            description: Data validation failed
+          500:
+            description: Database could not be accessed or email could not be sent
+        """
+
+        args = self.parser.parse_args()
+
+        messages = {}
+        messages['new_password_message'] = validate_password(args.new_password)
+        messages['confirm_new_password_message'] = validate_confirm_password(args.confirm_new_password, \
+                  args.new_password)
+
+        if not data_validator(messages):
+            return jsonify(messages), 400
+
+        try:
+            user.password = user.hash_password(password=args.new_password)
+            user.save()
+            response = jsonify({'message': 'Your password has been changed.'})
+            response.status_code = 200
+        except exc.SQLAlchemyError as error:
+            return jsonify({'message': str(error)}), 500
+        return response
+
 class LogoutView(Resource):
     """ Enables a user to logout. """
 
@@ -241,10 +298,13 @@ class LogoutView(Resource):
 register_view = RegisterView.as_view('register_view')
 login_view = LoginView.as_view('login_view')
 reset_password_view = ResetPasswordView.as_view('reset_password_view')
+change_password_view = ChangePasswordView.as_view('change_password_view')
 logout_view = LogoutView.as_view('logout_view')
 
 auth_blueprint.add_url_rule('/api/v1/auth/register', view_func=register_view, methods=['POST'])
 auth_blueprint.add_url_rule('/api/v1/auth/login', view_func=login_view, methods=['POST'])
 auth_blueprint.add_url_rule('/api/v1/auth/reset_password', view_func=reset_password_view, \
+        methods=['POST'])
+auth_blueprint.add_url_rule('/api/v1/auth/change_password', view_func=change_password_view, \
         methods=['POST'])
 auth_blueprint.add_url_rule('/api/v1/auth/logout', view_func=logout_view, methods=['GET'])
