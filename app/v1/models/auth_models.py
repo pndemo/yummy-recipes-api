@@ -40,7 +40,7 @@ class User(BaseMixin, TimestampMixin, db.Model):
         """Generate user token"""
         try:
             payload = {
-                'exp': datetime.utcnow() + timedelta(minutes=30),
+                'exp': datetime.utcnow() + timedelta(days=14),
                 'iat': datetime.utcnow(),
                 'sub': user_id
             }

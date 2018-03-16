@@ -98,7 +98,7 @@ class CategoryView(Resource):
 
         try:
             categories = Category.query.filter_by(user_id=user.id).all()
-            paginated = get_paginated_results(request, categories, url_for('category_view'))
+            paginated = get_paginated_results(request, categories, url_for('category_view') + '?')
             if paginated['is_good_query']:
                 results = []
                 for category in paginated['results']:
@@ -310,7 +310,7 @@ class CategorySearchView(Resource):
         try:
             categories = Category.query.filter(Category.category_name.ilike('%' + q + \
                     '%')).filter_by(user_id=user.id).all()
-            paginated = get_paginated_results(request, categories, url_for('category_search_view'))
+            paginated = get_paginated_results(request, categories, url_for('category_search_view') + '?q=' + q + '&')
             if paginated['is_good_query']:
                 results = []
                 for category in paginated['results']:
