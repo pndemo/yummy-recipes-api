@@ -159,9 +159,12 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
                         }
                         results.append(obj)
                     response = jsonify({
+                        'category_name': category.category_name,
                         'results': results,
                         'previous_link': paginated['previous_link'],
-                        'next_link': paginated['next_link']
+                        'next_link': paginated['next_link'],
+                        'page': paginated['page'],
+                        'pages': paginated['pages']
                         })
                     response.status_code = 200
                 else:
@@ -442,7 +445,9 @@ class RecipeSearchView(Resource):
                     response = jsonify({
                         'results': results,
                         'previous_link': paginated['previous_link'],
-                        'next_link': paginated['next_link']
+                        'next_link': paginated['next_link'],
+                        'page': paginated['page'],
+                        'pages': paginated['pages']
                         })
                     response.status_code = 200
                 else:

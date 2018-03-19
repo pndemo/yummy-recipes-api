@@ -113,7 +113,9 @@ class CategoryView(Resource):
                 response = jsonify({
                     'results': results,
                     'previous_link': paginated['previous_link'],
-                    'next_link': paginated['next_link']
+                    'next_link': paginated['next_link'],
+                    'page': paginated['page'],
+                    'pages': paginated['pages']
                     })
                 response.status_code = 200
             else:
@@ -325,7 +327,9 @@ class CategorySearchView(Resource):
                 response = jsonify({
                     'results': results,
                     'previous_link': paginated['previous_link'],
-                    'next_link': paginated['next_link']
+                    'next_link': paginated['next_link'],
+                    'page': paginated['page'],
+                    'pages': paginated['pages']
                     })
                 response.status_code = 200
             else:
