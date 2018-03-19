@@ -113,7 +113,9 @@ class CategoryView(Resource):
                 response = jsonify({
                     'results': results,
                     'previous_link': paginated['previous_link'],
-                    'next_link': paginated['next_link']
+                    'next_link': paginated['next_link'],
+                    'page': paginated['page'],
+                    'pages': paginated['pages']
                     })
                 response.status_code = 200
             else:
@@ -208,7 +210,8 @@ class CategorySpecificView(Resource):
         args = self.parser.parse_args()
 
         messages = {}
-        messages['category_name_message'] = validate_category_name(args.category_name.strip(), user.id)
+        messages['category_name_message'] = validate_category_name(args.category_name.strip(), user.id, \
+                category_id=category_id)
 
         if not data_validator(messages):
             return jsonify(messages), 400
@@ -325,7 +328,9 @@ class CategorySearchView(Resource):
                 response = jsonify({
                     'results': results,
                     'previous_link': paginated['previous_link'],
-                    'next_link': paginated['next_link']
+                    'next_link': paginated['next_link'],
+                    'page': paginated['page'],
+                    'pages': paginated['pages']
                     })
                 response.status_code = 200
             else:

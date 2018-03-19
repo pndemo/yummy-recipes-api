@@ -18,7 +18,7 @@ def validate_category_name(value, user_id, category_id=None):
         for category in categories:
             if category.user_id == user_id and category.category_name.lower() == \
                     value.lower():
-                if category_id and category.category_id == category_id:
+                if category_id and category.id == category_id:
                     return 'Valid'
                 return 'A category with this category name is already available.'
     return 'Valid'

@@ -144,7 +144,7 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
             category = Category.query.filter_by(id=category_id, user_id=user.id).first()
             if category:
                 recipes = Recipe.query.filter_by(category_id=category.id).all()
-                paginated = get_paginated_results(request, recipes, url_for('category_view') + '?')
+                paginated = get_paginated_results(request, recipes, url_for('recipe_view', category_id=category_id) + '?')
                 if paginated['is_good_query']:
                     results = []
                     for recipe in paginated['results']:
@@ -159,9 +159,12 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
                         }
                         results.append(obj)
                     response = jsonify({
+                        'category_name': category.category_name,
                         'results': results,
                         'previous_link': paginated['previous_link'],
-                        'next_link': paginated['next_link']
+                        'next_link': paginated['next_link'],
+                        'page': paginated['page'],
+                        'pages': paginated['pages']
                         })
                     response.status_code = 200
                 else:
@@ -292,7 +295,7 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
 
         messages = {}
         messages['recipe_name_message'] = validate_recipe_name(args.recipe_name.strip(), \
-                category_id=category_id)
+                category_id=category_id, recipe_id=recipe_id)
         messages['ingredients_message'] = validate_ingredients(args.ingredients)
         messages['directions_message'] = validate_directions(args.directions)
 
@@ -442,7 +445,9 @@ class RecipeSearchView(Resource):
                     response = jsonify({
                         'results': results,
                         'previous_link': paginated['previous_link'],
-                        'next_link': paginated['next_link']
+                        'next_link': paginated['next_link'],
+                        'page': paginated['page'],
+                        'pages': paginated['pages']
                         })
                     response.status_code = 200
                 else:

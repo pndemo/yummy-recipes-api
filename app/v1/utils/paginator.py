@@ -1,5 +1,7 @@
 """ Paginator function for category and recipe modules. """
 
+from math import ceil
+
 def get_paginated_results(request, results, url):
     """ Returns previous and next pagination links. """
     paginated = {}
@@ -18,6 +20,8 @@ def get_paginated_results(request, results, url):
         start = page * limit - limit + 1
 
         paginated['is_good_query'] = True
+        paginated['page'] = page
+        paginated['pages'] = ceil(count/limit)
 
         if count < start:
             paginated['previous_link'] = ''
