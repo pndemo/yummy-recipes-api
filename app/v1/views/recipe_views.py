@@ -144,7 +144,7 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
             category = Category.query.filter_by(id=category_id, user_id=user.id).first()
             if category:
                 recipes = Recipe.query.filter_by(category_id=category.id).all()
-                paginated = get_paginated_results(request, recipes, url_for('category_view') + '?')
+                paginated = get_paginated_results(request, recipes, url_for('recipe_view') + '?')
                 if paginated['is_good_query']:
                     results = []
                     for recipe in paginated['results']:
