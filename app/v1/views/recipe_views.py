@@ -295,7 +295,7 @@ ingredients with the mixing spoon. 3) Pour into the glass, filtering the ice wit
 
         messages = {}
         messages['recipe_name_message'] = validate_recipe_name(args.recipe_name.strip(), \
-                category_id=category_id)
+                category_id=category_id, recipe_id=recipe_id)
         messages['ingredients_message'] = validate_ingredients(args.ingredients)
         messages['directions_message'] = validate_directions(args.directions)
 

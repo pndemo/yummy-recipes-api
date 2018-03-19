@@ -18,7 +18,7 @@ def validate_recipe_name(value, category_id, recipe_id=None):
         for recipe in recipes:
             if recipe.category_id == category_id and recipe.recipe_name.lower() == \
                     value.lower():
-                if recipe_id and recipe.recipe_id == recipe_id:
+                if recipe_id and recipe.id == recipe_id:
                     return 'Valid'
                 return 'A recipe with this recipe name is already available.'
     return 'Valid'
